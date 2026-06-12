@@ -136,7 +136,7 @@ export function MetricsView({
       </section>
 
       <section>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
             Across all words
           </p>
@@ -144,6 +144,11 @@ export function MetricsView({
             {fmtK(wordIndex.totalWords)} unique words
           </span>
         </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Status moves only as you read: finishing a Study page clears the fog
+          on the words you didn’t tap; tapping one for its meaning brings it
+          back for review.
+        </p>
         <StatusSpread counts={state.spread} />
       </section>
 

@@ -73,6 +73,9 @@ describe("MetricsView", () => {
     expect(screen.getByText("Unknown")).toBeInTheDocument();
     const unknownCount = screen.getAllByText("4");
     expect(unknownCount.length).toBeGreaterThan(0);
+
+    // explains how the fog scale moves, near the status spread
+    expect(screen.getByText(/status moves only as you read/i)).toBeInTheDocument();
   });
 
   it("populated state: numbers reconcile with the mocked store contents", () => {

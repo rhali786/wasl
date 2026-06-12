@@ -9,6 +9,12 @@ const SURAHS: SurahIndexEntry[] = [
 ];
 
 describe("BrowseList", () => {
+  it("explains what the list is for", () => {
+    render(<BrowseList surahs={SURAHS} />);
+    expect(screen.getByRole("heading", { name: /find a sūrah/i })).toBeInTheDocument();
+    expect(screen.getByText(/tap any sūrah to open the reader/i)).toBeInTheDocument();
+  });
+
   it("links each surah to its starting page in the reader", () => {
     render(<BrowseList surahs={SURAHS} />);
     expect(screen.getByRole("link", { name: /Al-Fatihah/ })).toHaveAttribute("href", "/reader/1");
