@@ -1,5 +1,11 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { Reader, FLASH_FADE_MS, FLASH_MS } from "../components/Reader";
+import {
+  Reader,
+  FLASH_FADE_IN_MS,
+  FLASH_FADE_OUT_MS,
+  FLASH_HOLD_MS,
+  FLASH_MS,
+} from "../components/Reader";
 import { demote } from "@/features/review/lib/engine";
 import { defaultStatus, type WordStatus } from "@/features/review/lib/types";
 import type { CorpusPage } from "@/features/corpus/lib/types";
@@ -332,7 +338,7 @@ describe("Reader", () => {
     expect(onPreviousPage).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a slow-fading promotion whisper when finishing a page promotes words", () => {
+  it("shows a promotion whisper that fades in, holds, then fades out", () => {
     jest.useFakeTimers();
     const onNextPage = jest.fn();
     mockFinishPage.mockImplementation(() => ({
@@ -344,15 +350,27 @@ describe("Reader", () => {
       render(<Reader page={PAGE} hasNextPage onNextPage={onNextPage} />);
       fireEvent.click(screen.getByLabelText("Next page"));
 
-      expect(screen.getByTestId("promotion-flash")).toHaveTextContent("+1 word learned");
+      const flash = screen.getByTestId("promotion-flash");
+      expect(flash).toHaveTextContent("+1 word learned");
+      expect(flash.className).toContain("opacity-0");
 
       act(() => {
-        jest.advanceTimersByTime(FLASH_MS - FLASH_FADE_MS - 1);
+        jest.advanceTimersByTime(0); // kick off fade in
       });
-      expect(screen.getByTestId("promotion-flash").className).not.toContain("opacity-0");
+      expect(screen.getByTestId("promotion-flash").className).toContain("opacity-100");
 
       act(() => {
-        jest.advanceTimersByTime(FLASH_FADE_MS + 1);
+        jest.advanceTimersByTime(FLASH_FADE_IN_MS + FLASH_HOLD_MS - 1);
+      });
+      expect(screen.getByTestId("promotion-flash").className).toContain("opacity-100");
+
+      act(() => {
+        jest.advanceTimersByTime(1); // start fade out
+      });
+      expect(screen.getByTestId("promotion-flash").className).toContain("opacity-0");
+
+      act(() => {
+        jest.advanceTimersByTime(FLASH_FADE_OUT_MS);
       });
       expect(screen.queryByTestId("promotion-flash")).not.toBeInTheDocument();
     } finally {

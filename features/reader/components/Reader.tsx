@@ -28,10 +28,11 @@ function wordIdsOf(page: CorpusPage): string[] {
   return ids;
 }
 
-// The promotion whisper shows for FLASH_MS total, fading out over the last
-// FLASH_FADE_MS of that — a calm, unhurried close rather than a snap.
-export const FLASH_MS = 5500;
-export const FLASH_FADE_MS = 1200;
+// Promotion whisper timing: fade in → hold at full opacity (readable) → fade out.
+export const FLASH_FADE_IN_MS = 700;
+export const FLASH_HOLD_MS = 5000;
+export const FLASH_FADE_OUT_MS = 1800;
+export const FLASH_MS = FLASH_FADE_IN_MS + FLASH_HOLD_MS + FLASH_FADE_OUT_MS;
 
 // A horizontal drag past this many px counts as a page-turn swipe.
 const SWIPE_THRESHOLD_PX = 50;
@@ -119,7 +120,8 @@ export function Reader({
     null
   );
   const [flashCount, setFlashCount] = useState<number | null>(null);
-  const [flashFading, setFlashFading] = useState(false);
+  const [flashVisible, setFlashVisible] = useState(false);
+  const [flashLeaving, setFlashLeaving] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const accent = ACCENT[mode];
@@ -159,15 +161,20 @@ export function Reader({
     };
   }, []);
 
-  // Brief "+N" whisper when finishing a page promotes word-forms; lingers,
-  // then fades out on its own (see FLASH_MS/FLASH_FADE_MS).
+  // "+N words learned" whisper — fades in, holds long enough to read, fades out.
   useEffect(() => {
     if (flashCount === null) return;
-    setFlashFading(false);
-    const fadeTimer = setTimeout(() => setFlashFading(true), FLASH_MS - FLASH_FADE_MS);
+    setFlashLeaving(false);
+    setFlashVisible(false);
+    const showTimer = setTimeout(() => setFlashVisible(true), 0);
+    const fadeOutTimer = setTimeout(
+      () => setFlashLeaving(true),
+      FLASH_FADE_IN_MS + FLASH_HOLD_MS,
+    );
     const dismissTimer = setTimeout(() => setFlashCount(null), FLASH_MS);
     return () => {
-      clearTimeout(fadeTimer);
+      clearTimeout(showTimer);
+      clearTimeout(fadeOutTimer);
       clearTimeout(dismissTimer);
     };
   }, [flashCount]);
@@ -430,8 +437,12 @@ export function Reader({
         {flashCount !== null ? (
           <div
             data-testid="promotion-flash"
-            className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex items-center justify-center transition-opacity duration-[1200ms] ${
-              flashFading ? "opacity-0" : "opacity-100"
+            className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex items-center justify-center transition-opacity ease-in-out ${
+              flashLeaving
+                ? "opacity-0 duration-[1800ms]"
+                : flashVisible
+                  ? "opacity-100 duration-[700ms]"
+                  : "opacity-0 duration-[700ms]"
             }`}
           >
             <span className="rounded-full bg-gold/90 px-3 py-1 text-xs font-semibold text-white shadow-md">
