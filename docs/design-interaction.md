@@ -82,14 +82,23 @@ mode. In Mushaf mode:
 number, promote/demote controls, dictionary source selector, share/
 bookmark, "click for more."
 
-**Layout — a floating meaning card.** A small low-opacity card appears
-directly **above or below the tapped word** (whichever keeps it on-screen —
-words in the page's lower half open the card above, others below), holding
-just the word's meaning. It **overlays** the page — the 15 lines beneath never
-shift or resize. The tapped word is outlined. Tap anywhere on the page to
-dismiss. (This supersedes the earlier below-header ribbon; placing the card at
-the point of attention follows the eye down the page and reads as less
-obtrusive than a fixed strip.)
+**Layout — a floating meaning card.** A meaning card appears directly
+**above or below the tapped word** (whichever keeps it on-screen — words in
+the page's lower half open the card above, others below), holding just the
+word's meaning in Cormorant italic. It **overlays** the page — the 15 lines
+beneath never shift or resize. The tapped word is outlined. Tap anywhere on
+the page to dismiss. (This supersedes the earlier below-header ribbon; placing
+the card at the point of attention follows the eye down the page and reads as
+less obtrusive than a fixed strip.)
+
+**Contrast — the card inverts against the time-of-day mood.** Because the page
+background shifts across the day (light at dawn/midday/evening, dark at night),
+the card must not borrow the page's own surface tone or it camouflages. So it
+flips to the *opposite* tone of the mood: a deep forest surface with cream text
+on the light daytime moods, and a warm sand surface with ink text at night
+(`.dark`). A faint gold hairline ring carries the signature thread. The meaning
+sits at `text-base` (not a whisper) — legibility wins over recession here,
+since the card only appears on a deliberate tap.
 
 ## Full flow (review mode)
 
