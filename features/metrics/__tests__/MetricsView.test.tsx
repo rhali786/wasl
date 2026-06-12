@@ -78,6 +78,24 @@ describe("MetricsView", () => {
     expect(screen.getByText(/status moves only as you read/i)).toBeInTheDocument();
   });
 
+  it("opens with a plain-language intro and plainly-named sections", () => {
+    mockGetAllStatuses.mockReturnValue({});
+    mockGetTotalReturns.mockReturnValue(0);
+    mockGetTotalSessions.mockReturnValue(0);
+    mockGetMonthlyMovement.mockReturnValue({ promotions: 0, demotions: 0 });
+    mockGetReturnGrid.mockReturnValue(EMPTY_GRID);
+    mockGetDailyMovement.mockReturnValue(EMPTY_DAILY);
+
+    render(<MetricsView surahs={surahs} wordIndex={wordIndex} />);
+
+    // a plain sentence up top says what the page is and how the numbers move
+    expect(screen.getByText(/Reading a page\s+in Study mode clears/i)).toBeInTheDocument();
+    // sections lead with concrete words a younger reader can follow
+    expect(screen.getByText("You know these best")).toBeInTheDocument();
+    expect(screen.getByText("Review these next")).toBeInTheDocument();
+    expect(screen.getByText("All your words")).toBeInTheDocument();
+  });
+
   it("populated state: numbers reconcile with the mocked store contents", () => {
     mockGetAllStatuses.mockReturnValue({
       a: { id: "a", level: 4, cleanReads: 12 },

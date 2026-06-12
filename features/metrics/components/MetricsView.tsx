@@ -93,12 +93,19 @@ export function MetricsView({
     <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col gap-6 px-6 pb-32 pt-6">
       <header>
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-          Luminosity by surah
+          Your progress
         </p>
-        <h1 className="mt-1 text-xl font-semibold text-foreground">How clear each one is</h1>
-        <p className="mt-1 text-sm font-medium text-foreground">
+        <h1 className="mt-1 text-xl font-semibold text-foreground">
+          How well you know each sūrah
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          This page shows how much of the Qur’an you’ve learned. Reading a page
+          in Study mode clears the words you already know; tapping a word for its
+          meaning brings it back to review later.
+        </p>
+        <p className="mt-3 text-sm font-medium text-foreground">
           {fullyLuminous > 0
-            ? `${fullyLuminous} of ${surahs.length} surahs fully luminous`
+            ? `${fullyLuminous} of ${surahs.length} surahs fully learned`
             : "Every surah starts in the fog — your first sessions will begin to clear it."}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -108,14 +115,14 @@ export function MetricsView({
 
       <section>
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-          Most luminous
+          You know these best
         </p>
         <SurahKnown items={top4} />
       </section>
 
       <section>
         <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-          Tend next
+          Review these next
         </p>
         <p className="mb-3 text-xs text-muted-foreground">
           where the fog is thickest — an invitation, not a score
@@ -138,7 +145,7 @@ export function MetricsView({
       <section>
         <div className="mb-1 flex items-center justify-between">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-            Across all words
+            All your words
           </p>
           <span className="text-xs tabular-nums text-muted-foreground">
             {fmtK(wordIndex.totalWords)} unique words
@@ -155,7 +162,7 @@ export function MetricsView({
       <section>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-            Returns
+            Days you came back
           </p>
           <span className="text-xs tabular-nums text-muted-foreground">
             {state.totalSessions} sessions · {state.totalReturns} days

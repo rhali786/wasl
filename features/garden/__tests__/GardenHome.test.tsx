@@ -65,6 +65,20 @@ describe("GardenHome", () => {
     expect(screen.getByRole("heading", { name: /Good morning, Rasheed/ })).toBeInTheDocument();
   });
 
+  it("greets by the name saved in Settings, overriding the prop default", async () => {
+    window.localStorage.setItem(
+      "wird:settings",
+      JSON.stringify({ memorized: [], memorizing: [], sessionMinutes: 5, name: "Maryam" })
+    );
+    render(<GardenHome name="Rasheed" greetingIndex={0} />);
+    expect(
+      await screen.findByRole("heading", { name: /Good morning, Maryam/ })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /Good morning, Rasheed/ })
+    ).not.toBeInTheDocument();
+  });
+
   it("shows the Arabic translation beneath the English greeting", () => {
     render(<GardenHome name="Rasheed" greetingIndex={0} />);
     expect(screen.getByText(/صَبَاحُ الخَيْرِ، يا رَشِيد/)).toBeInTheDocument();

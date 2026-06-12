@@ -90,6 +90,10 @@ export function GardenHome({
 
   const theme = MOOD_THEME[mood];
 
+  // The name shown in greetings comes from Settings once set; the prop is only
+  // the pre-mount / unset fallback. Editing the name in Settings flows here.
+  const displayName = settings.name ?? name;
+
   // The session plan and the hero it implies. The hero is the opening of what
   // the user is memorizing (else memorized); an explicit `ayah` prop overrides.
   const plan = useMemo(() => buildSessionPlan(settings, surahs), [settings]);
@@ -122,7 +126,7 @@ export function GardenHome({
               {weekday ? `${weekday} · ${theme.label}` : theme.label}
             </p>
             <h1 className="mt-1 text-xl font-semibold text-foreground">
-              {greeting ? greeting.english(name) : theme.greeting(name)}
+              {greeting ? greeting.english(displayName) : theme.greeting(displayName)}
             </h1>
             {greeting ? (
               <p
@@ -130,7 +134,7 @@ export function GardenHome({
                 lang="ar"
                 className="mt-1 font-arabic text-base leading-relaxed text-muted-foreground"
               >
-                {greeting.arabic(toArabicName(name))}
+                {greeting.arabic(toArabicName(displayName))}
               </p>
             ) : null}
           </div>
