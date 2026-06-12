@@ -62,6 +62,33 @@ describe("SettingsView", () => {
     expect(replace).toHaveBeenCalledWith("/login");
   });
 
+  it("deletes all local data and account after a confirm, then routes to onboarding", () => {
+    signUp("rasheed@example.com");
+    window.localStorage.setItem("wird:wordStatuses", "{\"x\":1}");
+    render(<SettingsView surahs={SURAHS} />);
+
+    // First click only arms the confirm — nothing is destroyed yet.
+    fireEvent.click(screen.getByRole("button", { name: /delete data & account/i }));
+    expect(window.localStorage.length).toBeGreaterThan(0);
+    expect(replace).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /delete everything/i }));
+    expect(window.localStorage.length).toBe(0);
+    expect(replace).toHaveBeenCalledWith("/onboarding");
+  });
+
+  it("can cancel the delete confirm, leaving data intact", () => {
+    signUp("rasheed@example.com");
+    render(<SettingsView surahs={SURAHS} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /delete data & account/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
+
+    expect(screen.queryByRole("button", { name: /delete everything/i })).not.toBeInTheDocument();
+    expect(getSettings().email).toBe("rasheed@example.com");
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it("places the account controls (name + log out) above session length", () => {
     signUp("rasheed@example.com");
     render(<SettingsView surahs={SURAHS} />);

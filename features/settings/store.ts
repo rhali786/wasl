@@ -6,6 +6,7 @@ import {
   displayNameFromEmail,
   isValidEmail,
 } from "@/features/onboarding/lib/email";
+import { logger } from "@/features/lib/logger";
 import { scopedKey } from "@/features/lib/userScope";
 import { MIN_SESSION_MINUTES, SESSION_MINUTE_STEP, type Settings } from "./lib/types";
 import { readSettings, writeSettings } from "./lib/storage";
@@ -73,6 +74,21 @@ export function signOut(): Settings {
   };
   writeSettings(next);
   return next;
+}
+
+/**
+ * Irreversibly erase everything this app stores on the device — account
+ * identity, settings, word statuses, session history. v1 is local-first, so
+ * this is the full "delete my account and data". The caller routes the user
+ * back to onboarding afterwards.
+ */
+export function deleteAccountAndData(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.clear();
+  } catch (err) {
+    logger.error({ err }, "failed to clear local data");
+  }
 }
 
 /** Set or clear the display name shown in greetings and Settings. */

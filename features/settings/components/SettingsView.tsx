@@ -7,6 +7,7 @@ import type { SurahIndexEntry } from "@/features/corpus/lib/types";
 import { Button } from "@/components/ui/button";
 import { SESSION_MINUTE_STEP, type Settings } from "../lib/types";
 import {
+  deleteAccountAndData,
   getSettings,
   setName,
   setSessionMinutes,
@@ -22,6 +23,7 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
   const router = useRouter();
   // SSR-neutral defaults; real settings load after mount (localStorage).
   const [settings, setSettings] = useState<Settings>(getSettings);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     setSettings(getSettings());
@@ -30,6 +32,11 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
   function handleLogOut() {
     signOut();
     router.replace("/login");
+  }
+
+  function handleDeleteEverything() {
+    deleteAccountAndData();
+    router.replace("/onboarding");
   }
 
   return (
@@ -163,6 +170,56 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
             );
           })}
         </ul>
+      </section>
+
+      {/* Danger zone — wipe every local trace (v1 is local-first, so this is
+          the full account + data delete). Two-step to prevent an accidental
+          irreversible tap. */}
+      <section className="mt-8 rounded-2xl bg-destructive/5 p-4 ring-1 ring-destructive/20">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-destructive">
+          Delete
+        </p>
+        {confirmDelete ? (
+          <>
+            <p className="mt-2 text-sm text-foreground">
+              This erases your account and everything on this device — progress,
+              sūrahs, and history. It can’t be undone.
+            </p>
+            <div className="mt-3 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmDelete(false)}
+                className="flex-1 rounded-full"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleDeleteEverything}
+                className="flex-1 rounded-full bg-destructive text-white hover:bg-destructive/90"
+              >
+                Delete everything
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Remove your account and all reading data from this device.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setConfirmDelete(true)}
+              className="mt-3 rounded-full bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete data &amp; account
+            </Button>
+          </>
+        )}
       </section>
     </div>
   );
