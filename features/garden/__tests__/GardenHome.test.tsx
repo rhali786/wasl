@@ -38,6 +38,10 @@ jest.mock("@/features/history/store", () => ({
   getTotalSessions: jest.fn(() => 5),
 }));
 
+jest.mock("@/features/shell/components/MoodContext", () => ({
+  useMood: () => "morning",
+}));
+
 import { GardenHome } from "../GardenHome";
 
 describe("GardenHome", () => {

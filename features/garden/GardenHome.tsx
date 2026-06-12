@@ -64,19 +64,15 @@ export function GardenHome({
   // Settings drive the hero ayah and session plan; load after mount (the
   // server has no localStorage, so SSR renders the neutral default).
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [greeting, setGreeting] = useState<GardenGreeting | null>(() =>
-    greetingIndex !== undefined ? pickGreeting(greetingIndex) : null,
-  );
+  const [greeting, setGreeting] = useState<GardenGreeting | null>(null);
 
   useEffect(() => {
     setWeekday(new Date().toLocaleDateString(undefined, { weekday: "long" }));
   }, []);
 
   useEffect(() => {
-    if (greetingIndex === undefined) {
-      setGreeting(pickGreeting());
-    }
-  }, [greetingIndex]);
+    setGreeting(pickGreeting(mood, greetingIndex));
+  }, [mood, greetingIndex]);
 
   useEffect(() => {
     if (sessionsProp === undefined) {
