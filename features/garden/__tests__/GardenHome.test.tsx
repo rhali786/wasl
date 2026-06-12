@@ -57,8 +57,13 @@ describe("GardenHome", () => {
   });
 
   it("greets the user by name", () => {
-    render(<GardenHome name="Rasheed" />);
-    expect(screen.getByRole("heading", { name: /Rasheed/ })).toBeInTheDocument();
+    render(<GardenHome name="Rasheed" greetingIndex={0} />);
+    expect(screen.getByRole("heading", { name: /Good morning, Rasheed/ })).toBeInTheDocument();
+  });
+
+  it("shows the Arabic translation beneath the English greeting", () => {
+    render(<GardenHome name="Rasheed" greetingIndex={0} />);
+    expect(screen.getByText(/صَبَاحُ الخَيْرِ، يا Rasheed/)).toBeInTheDocument();
   });
 
   it("offers Study and Mushaf as the mode choice", () => {

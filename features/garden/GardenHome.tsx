@@ -11,6 +11,7 @@ import { getTotalSessions } from "@/features/history/store";
 import { getRecommendedPage } from "@/features/reader/lib/recommendedPage";
 import { getSettings } from "@/features/settings/store";
 import { DEFAULT_SETTINGS, type Settings } from "@/features/settings/lib/types";
+import { pickGreeting, type GardenGreeting } from "@/features/garden/lib/greetings";
 import { buildSessionPlan } from "@/features/session/lib/plan";
 import surahsData from "@/features/corpus/data/surahs.json";
 import openingsData from "@/features/corpus/data/openings.json";
@@ -44,10 +45,13 @@ export function GardenHome({
   name = "Rasheed",
   sessions: sessionsProp,
   ayah: ayahProp,
+  /** Test hook — fixes which of the 15 greeting pairs is shown. */
+  greetingIndex,
 }: {
   name?: string;
   sessions?: number;
   ayah?: WaitingAyah;
+  greetingIndex?: number;
 }) {
   // Mood comes from the app-wide shell (single source of truth). The weekday
   // is garden-only chrome; resolve it after mount to avoid a clock hydration
@@ -59,10 +63,19 @@ export function GardenHome({
   // Settings drive the hero ayah and session plan; load after mount (the
   // server has no localStorage, so SSR renders the neutral default).
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [greeting, setGreeting] = useState<GardenGreeting | null>(() =>
+    greetingIndex !== undefined ? pickGreeting(greetingIndex) : null,
+  );
 
   useEffect(() => {
     setWeekday(new Date().toLocaleDateString(undefined, { weekday: "long" }));
   }, []);
+
+  useEffect(() => {
+    if (greetingIndex === undefined) {
+      setGreeting(pickGreeting());
+    }
+  }, [greetingIndex]);
 
   useEffect(() => {
     if (sessionsProp === undefined) {
@@ -112,8 +125,17 @@ export function GardenHome({
               {weekday ? `${weekday} · ${theme.label}` : theme.label}
             </p>
             <h1 className="mt-1 text-xl font-semibold text-foreground">
-              {theme.greeting(name)}
+              {greeting ? greeting.english(name) : theme.greeting(name)}
             </h1>
+            {greeting ? (
+              <p
+                dir="rtl"
+                lang="ar"
+                className="mt-1 font-arabic text-base leading-relaxed text-muted-foreground"
+              >
+                {greeting.arabic(name)}
+              </p>
+            ) : null}
           </div>
           <GrowthVine sessions={sessions} className="mt-2 shrink-0" />
         </header>
