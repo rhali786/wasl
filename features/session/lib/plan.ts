@@ -7,8 +7,8 @@ import type { Settings } from "@/features/settings/lib/types";
 import type { SessionCategory, SessionStep } from "./types";
 
 const WEIGHTS: Record<SessionCategory, number> = {
-  memorized: 5,
-  memorizing: 3,
+  memorizing: 5,
+  memorized: 3,
   longer: 2,
 };
 
@@ -30,9 +30,9 @@ function lengthByPageSpan(surahs: readonly SurahIndexEntry[]): Map<number, numbe
 
 /**
  * Build the ordered session plan. One step per category that has content:
- * memorized (first), memorizing (first), then a breadth step (the longest
- * sūrah the user hasn't selected). Empty lists → empty plan (the home shows
- * the "set your sūrahs" prompt instead).
+ * memorizing (first — what's being worked on), memorized (second), then a
+ * breadth step (the longest sūrah the user hasn't selected). Empty lists →
+ * empty plan (the home shows the "set your sūrahs" prompt instead).
  */
 export function buildSessionPlan(
   settings: Settings,
@@ -53,8 +53,8 @@ export function buildSessionPlan(
     });
   };
 
-  if (settings.memorized.length) push("memorized", settings.memorized[0]);
   if (settings.memorizing.length) push("memorizing", settings.memorizing[0]);
+  if (settings.memorized.length) push("memorized", settings.memorized[0]);
 
   const engaged = settings.memorized.length + settings.memorizing.length > 0;
   if (engaged) {

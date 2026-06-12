@@ -63,6 +63,6 @@ describe("ReaderRoute", () => {
 
   it("passes initialMode through to Reader", () => {
     render(<ReaderRoute page={PAGE} pageNumber={5} initialMode="mushaf" />);
-    expect(screen.getByLabelText(/Mode: Mushaf/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
   });
 });

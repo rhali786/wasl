@@ -3,6 +3,7 @@
 // SessionProvider (UI lifecycle/timer) and by features/review/store.ts
 // (hasMoved/markMoved guard promotions and demotions).
 
+import { recordSessionComplete } from "@/features/history/lib/sessionLog";
 import type { Session, SessionStep } from "./lib/types";
 import { clearSession, readSession, writeSession } from "./lib/storage";
 
@@ -29,6 +30,9 @@ export function startSession(plan: SessionStep[], durationMs: number): Session {
 }
 
 export function endSession(): void {
+  if (readSession()) {
+    recordSessionComplete();
+  }
   clearSession();
 }
 

@@ -107,9 +107,9 @@ export function Reader({
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
 }) {
-  const { session, remainingMs, nudge, dismissNudge, advanceStep, endSession } =
+  const { session, remainingMs, nudge, dismissNudge, advanceStep, endSession, startStudySession } =
     useSession();
-  const [mode, setMode] = useState<ReaderMode>(initialMode ?? "study");
+  const [mode, setMode] = useState<ReaderMode>(() => initialMode ?? readReaderMode());
   const wordIds = useMemo(() => wordIdsOf(page), [page]);
   const [statuses, setStatuses] = useState<Record<string, WordStatus>>(() =>
     defaultStatuses(wordIds)
@@ -172,22 +172,23 @@ export function Reader({
     };
   }, [flashCount]);
 
-  // Mode resolution: an explicit ?mode= (from the home entry cards) wins and
-  // is persisted; page-to-page navigation carries no query, so it falls back
-  // to the persisted mode. This keeps Mushaf "sticky" until the user taps
-  // the mode toggle, rather than relapsing to Study on every page turn.
+  // An explicit ?mode= on entry (home cards, nav Reader tab) wins and is
+  // persisted. Page-to-page navigation carries no query — mode comes from the
+  // lazy initializer + localStorage, so the slider never flashes Study first.
   useEffect(() => {
-    if (initialMode) {
-      setMode(initialMode);
-      writeReaderMode(initialMode);
-    } else {
-      setMode(readReaderMode());
-    }
+    if (!initialMode) return;
+    setMode(initialMode);
+    writeReaderMode(initialMode);
   }, [initialMode]);
 
   function switchMode(next: ReaderMode) {
     setMode(next);
     writeReaderMode(next);
+    if (next === "study") {
+      startStudySession();
+    } else if (session) {
+      endSession({ summary: false });
+    }
   }
 
   function tap(key: string, word: CorpusWord, line: number) {

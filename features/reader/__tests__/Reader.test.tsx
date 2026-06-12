@@ -31,6 +31,7 @@ function noSession() {
     nudge: null,
     dismissNudge: jest.fn(),
     advanceStep: jest.fn(),
+    startStudySession: jest.fn(),
     endSession: jest.fn(),
   };
 }
@@ -181,6 +182,34 @@ describe("Reader", () => {
     expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getAllByText("بِسْمِ")).toHaveLength(2);
     expect(screen.queryByText("بسم")).not.toBeInTheDocument();
+  });
+
+  it("initializes Mushaf from localStorage without flashing Study first", () => {
+    window.localStorage.setItem("wird:readerMode", "mushaf");
+    render(<Reader page={PAGE} />);
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("switching the slider to Study starts a session", () => {
+    const startStudySession = jest.fn();
+    mockUseSession.mockReturnValue({ ...noSession(), startStudySession });
+    render(<Reader page={PAGE} initialMode="mushaf" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Study" }));
+    expect(startStudySession).toHaveBeenCalledTimes(1);
+  });
+
+  it("switching the slider to Mushaf ends an active session without the summary overlay", () => {
+    const endSession = jest.fn();
+    mockUseSession.mockReturnValue({
+      ...noSession(),
+      session: ACTIVE_SESSION,
+      endSession,
+    });
+    render(<Reader page={PAGE} initialMode="study" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Mushaf" }));
+    expect(endSession).toHaveBeenCalledWith({ summary: false });
   });
 
   it("Mushaf mode persists across page navigation (sticky until the slider is used)", () => {

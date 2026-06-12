@@ -1,3 +1,4 @@
+import { getTotalSessions } from "@/features/history/lib/sessionLog";
 import {
   startSession,
   endSession,
@@ -35,10 +36,16 @@ describe("session store", () => {
     expect(getSession()?.id).toBe(s.id);
   });
 
-  it("ends (clears) the session", () => {
+  it("ends (clears) the session and records a completed session", () => {
     startSession(PLAN, 300_000);
     endSession();
     expect(getSession()).toBeNull();
+    expect(getTotalSessions()).toBe(1);
+  });
+
+  it("does not record a completion when ending with no active session", () => {
+    endSession();
+    expect(getTotalSessions()).toBe(0);
   });
 
   it("tracks moved ids once per session (the throttle)", () => {

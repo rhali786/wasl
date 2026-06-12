@@ -35,11 +35,7 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("@/features/history/store", () => ({
-  getTotalReturns: jest.fn(() => 5),
-}));
-
-jest.mock("@/features/reader/lib/lastPage", () => ({
-  readLastPage: jest.fn(() => 7),
+  getTotalSessions: jest.fn(() => 5),
 }));
 
 import { GardenHome } from "../GardenHome";
@@ -71,16 +67,16 @@ describe("GardenHome", () => {
     expect(screen.getByText("Mushaf")).toBeInTheDocument();
   });
 
-  it("shows the open-ended growth vine labelled by return count (never out-of-N)", () => {
-    render(<GardenHome name="Rasheed" returns={3} />);
-    const vine = screen.getByRole("img", { name: /3 returns/i });
+  it("shows the open-ended growth vine labelled by session count (never out-of-N)", () => {
+    render(<GardenHome name="Rasheed" sessions={3} />);
+    const vine = screen.getByRole("img", { name: /3 sessions/i });
     expect(vine).toBeInTheDocument();
     expect(vine.getAttribute("aria-label")).not.toMatch(/\//); // no "x / y"
   });
 
-  it("falls back to the real return count from history when no returns prop is given", async () => {
+  it("falls back to the real session count from history when no sessions prop is given", async () => {
     render(<GardenHome name="Rasheed" />);
-    const vine = await screen.findByRole("img", { name: /5 returns/i });
+    const vine = await screen.findByRole("img", { name: /5 sessions/i });
     expect(vine).toBeInTheDocument();
   });
 
@@ -90,16 +86,30 @@ describe("GardenHome", () => {
     expect(screen.getByRole("link", { name: "Browse" })).toBeInTheDocument();
   });
 
-  it("Study entry links into the reader at the last-visited page in Study mode", async () => {
+  it("Study entry links into the reader at the page Home recommends, in Study mode", async () => {
+    window.localStorage.setItem(
+      "wird:settings",
+      JSON.stringify({ memorized: [], memorizing: [112], sessionMinutes: 5 })
+    );
     render(<GardenHome name="Rasheed" />);
     const link = await screen.findByRole("link", { name: /Study/ });
-    expect(link).toHaveAttribute("href", "/reader/7?mode=study");
+    expect(link).toHaveAttribute("href", "/reader/604?mode=study"); // Al-Ikhlas
   });
 
-  it("Mushaf entry links into the reader at the last-visited page in Mushaf mode", async () => {
+  it("Mushaf entry links into the reader at the page Home recommends, in Mushaf mode", async () => {
+    window.localStorage.setItem(
+      "wird:settings",
+      JSON.stringify({ memorized: [], memorizing: [112], sessionMinutes: 5 })
+    );
     render(<GardenHome name="Rasheed" />);
     const link = await screen.findByRole("link", { name: /Mushaf/ });
-    expect(link).toHaveAttribute("href", "/reader/7?mode=mushaf");
+    expect(link).toHaveAttribute("href", "/reader/604?mode=mushaf"); // Al-Ikhlas
+  });
+
+  it("entry cards default to page 1 when no sūrahs are set up", async () => {
+    render(<GardenHome name="Rasheed" />);
+    const link = await screen.findByRole("link", { name: /Study/ });
+    expect(link).toHaveAttribute("href", "/reader/1?mode=study");
   });
 
   it("points to Settings when no sūrahs are chosen yet", () => {

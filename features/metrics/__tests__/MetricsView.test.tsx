@@ -8,6 +8,7 @@ jest.mock("@/features/review/store", () => ({
 
 jest.mock("@/features/history/store", () => ({
   getTotalReturns: jest.fn(),
+  getTotalSessions: jest.fn(),
   getMonthlyMovement: jest.fn(),
   getReturnGrid: jest.fn(),
   getDailyMovement: jest.fn(),
@@ -19,10 +20,12 @@ import {
   getMonthlyMovement,
   getReturnGrid,
   getTotalReturns,
+  getTotalSessions,
 } from "@/features/history/store";
 
 const mockGetAllStatuses = getAllStatuses as jest.Mock;
 const mockGetTotalReturns = getTotalReturns as jest.Mock;
+const mockGetTotalSessions = getTotalSessions as jest.Mock;
 const mockGetMonthlyMovement = getMonthlyMovement as jest.Mock;
 const mockGetReturnGrid = getReturnGrid as jest.Mock;
 const mockGetDailyMovement = getDailyMovement as jest.Mock;
@@ -54,14 +57,18 @@ describe("MetricsView", () => {
   it("empty state: no statuses or history yet", () => {
     mockGetAllStatuses.mockReturnValue({});
     mockGetTotalReturns.mockReturnValue(0);
+    mockGetTotalSessions.mockReturnValue(0);
     mockGetMonthlyMovement.mockReturnValue({ promotions: 0, demotions: 0 });
     mockGetReturnGrid.mockReturnValue(EMPTY_GRID);
     mockGetDailyMovement.mockReturnValue(EMPTY_DAILY);
 
     render(<MetricsView surahs={surahs} wordIndex={wordIndex} />);
 
-    expect(screen.getByText(/0 of 3 surahs/)).toBeInTheDocument();
-    expect(screen.getByText("0 total")).toBeInTheDocument();
+    // first-run: a warm invitation, not a discouraging "0 of N" count
+    expect(screen.getByText(/starts in the fog/i)).toBeInTheDocument();
+    expect(screen.queryByText(/0 of 3 surahs/)).not.toBeInTheDocument();
+    expect(screen.getByText(/0 study sessions completed/i)).toBeInTheDocument();
+    expect(screen.getByText(/0 sessions · 0 days/i)).toBeInTheDocument();
     // all 4 ids default to Unknown (level 0)
     expect(screen.getByText("Unknown")).toBeInTheDocument();
     const unknownCount = screen.getAllByText("4");
@@ -74,6 +81,7 @@ describe("MetricsView", () => {
       b: { id: "b", level: 4, cleanReads: 12 },
     });
     mockGetTotalReturns.mockReturnValue(7);
+    mockGetTotalSessions.mockReturnValue(12);
     mockGetMonthlyMovement.mockReturnValue({ promotions: 5, demotions: 2 });
     mockGetReturnGrid.mockReturnValue(EMPTY_GRID);
     mockGetDailyMovement.mockReturnValue(EMPTY_DAILY);
@@ -87,8 +95,9 @@ describe("MetricsView", () => {
     expect(screen.getAllByText("Al-Baqarah").length).toBeGreaterThan(0);
     expect(screen.getAllByText("0%").length).toBeGreaterThan(0);
 
-    // returns + movement come straight from the history store
-    expect(screen.getByText("7 total")).toBeInTheDocument();
+    // sessions, return-days, and movement come straight from the history store
+    expect(screen.getByText(/12 study sessions completed/i)).toBeInTheDocument();
+    expect(screen.getByText(/12 sessions · 7 days/i)).toBeInTheDocument();
     expect(screen.getByText(/\+5 \/ −2 this month/)).toBeInTheDocument();
   });
 });

@@ -152,6 +152,12 @@ under `features/<feature>/`.
 
 - **Mode control:** Study / Mushaf is a segmented slider (both labels visible;
   thumb slides to the active side). Persist via `features/reader/lib/readerMode.ts`.
+  Initialize mode from localStorage on mount — never default to Study and then
+  snap to Mushaf on page turns.
+- **Sessions start on Study entry:** Home Study card (`?mode=study`), bottom-nav
+  Reader tab (`?mode=study`), and switching the slider to Study all call
+  `startStudySession()`. Switching to Mushaf ends the active session silently
+  (no summary overlay). Leaving `/reader/*` ends with the summary overlay.
 - **Page metadata:** sūrah, juz, and page number sit **between** the bottom
   paging arrows — not in the top header.
 - **Promotion whisper:** when Engine A promotes word-forms on page finish, show
@@ -160,6 +166,9 @@ under `features/<feature>/`.
 - **Swipe paging:** horizontal touch swipes on the reader frame turn pages
   (left = next, right = previous). Works in mobile browsers / installed PWA;
   not native-app-only. Desktop still uses the arrow buttons.
+- **Growth vine:** one leaf per **completed Study session** (`sessionLog`), not
+  per calendar day. Multiple sessions on the same day each earn a leaf. The
+  Metrics Returns grid still marks **days** with any reading activity.
 
 ---
 

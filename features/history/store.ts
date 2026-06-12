@@ -6,7 +6,10 @@ import {
   withMovement,
   withReturn,
 } from "./lib/engine";
+import { getTotalSessions, recordSessionComplete } from "./lib/sessionLog";
 import { readHistory, writeHistory } from "./lib/storage";
+
+export { getTotalSessions, recordSessionComplete };
 
 export function recordReturn(now: Date = new Date()): void {
   writeHistory(withReturn(readHistory(), now));

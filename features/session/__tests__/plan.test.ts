@@ -20,19 +20,19 @@ describe("buildSessionPlan", () => {
     expect(buildSessionPlan(settings({}), SURAHS)).toEqual([]);
   });
 
-  it("orders the steps memorized → memorizing → longer with 5:3:2 weights", () => {
+  it("orders the steps memorizing → memorized → longer with 5:3:2 weights", () => {
     const plan = buildSessionPlan(
       settings({ memorized: [1], memorizing: [3] }),
       SURAHS
     );
     expect(plan.map((s) => s.category)).toEqual([
-      "memorized",
       "memorizing",
+      "memorized",
       "longer",
     ]);
     expect(plan.map((s) => s.weight)).toEqual([5, 3, 2]);
-    expect(plan[0]).toMatchObject({ surah: 1, page: 1 });
-    expect(plan[1]).toMatchObject({ surah: 3, page: 50 });
+    expect(plan[0]).toMatchObject({ surah: 3, page: 50 });
+    expect(plan[1]).toMatchObject({ surah: 1, page: 1 });
   });
 
   it("derives the longer step from the longest non-selected sūrah (page-span)", () => {
@@ -51,7 +51,7 @@ describe("buildSessionPlan", () => {
 });
 
 describe("stepDurations", () => {
-  it("splits the total time by normalized 5:3:2 weights", () => {
+  it("splits the total time by normalized 5:3:2 weights, memorizing first", () => {
     const plan = buildSessionPlan(
       settings({ memorized: [1], memorizing: [3] }),
       SURAHS

@@ -33,6 +33,7 @@ function noSession() {
     nudge: null,
     dismissNudge: jest.fn(),
     advanceStep: jest.fn(),
+    startStudySession: jest.fn(),
     endSession: jest.fn(),
   };
 }

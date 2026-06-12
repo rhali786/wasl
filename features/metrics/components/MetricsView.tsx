@@ -7,6 +7,7 @@ import {
   getMonthlyMovement,
   getReturnGrid,
   getTotalReturns,
+  getTotalSessions,
 } from "@/features/history/store";
 import type { SurahIndexEntry } from "@/features/corpus/lib/types";
 import { computeStatusSpread, computeSurahPct, fmtK } from "../lib/computeStats";
@@ -25,6 +26,7 @@ interface MetricsState {
   spread: number[];
   surahItems: SurahKnownItem[];
   totalReturns: number;
+  totalSessions: number;
   monthlyMovement: { promotions: number; demotions: number };
   returnGrid: boolean[][];
   dailyMovement: { up: number; down: number }[];
@@ -41,6 +43,7 @@ function emptyState(surahs: readonly SurahIndexEntry[], wordIndex: WordIndex): M
     spread: [wordIndex.totalWords, 0, 0, 0, 0],
     surahItems: surahs.map((s) => ({ number: s.number, name: s.name, arabic: s.arabic, pct: 0 })),
     totalReturns: 0,
+    totalSessions: 0,
     monthlyMovement: { promotions: 0, demotions: 0 },
     returnGrid: EMPTY_GRID,
     dailyMovement: EMPTY_DAILY,
@@ -72,6 +75,7 @@ export function MetricsView({
       spread,
       surahItems,
       totalReturns: getTotalReturns(),
+      totalSessions: getTotalSessions(),
       monthlyMovement: getMonthlyMovement(),
       returnGrid: getReturnGrid(),
       dailyMovement: getDailyMovement(),
@@ -93,7 +97,12 @@ export function MetricsView({
         </p>
         <h1 className="mt-1 text-xl font-semibold text-foreground">How clear each one is</h1>
         <p className="mt-1 text-sm font-medium text-foreground">
-          {`${fullyLuminous} of ${surahs.length} surahs fully luminous`}
+          {fullyLuminous > 0
+            ? `${fullyLuminous} of ${surahs.length} surahs fully luminous`
+            : "Every surah starts in the fog — your first sessions will begin to clear it."}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {state.totalSessions} study session{state.totalSessions === 1 ? "" : "s"} completed
         </p>
       </header>
 
@@ -144,7 +153,7 @@ export function MetricsView({
             Returns
           </p>
           <span className="text-xs tabular-nums text-muted-foreground">
-            {state.totalReturns} total
+            {state.totalSessions} sessions · {state.totalReturns} days
           </span>
         </div>
         <ReturnsGrid weeks={state.returnGrid} />

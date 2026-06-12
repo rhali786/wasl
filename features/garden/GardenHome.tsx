@@ -7,8 +7,8 @@ import { useMood } from "@/features/shell/components/MoodContext";
 import { Sprout } from "./components/Sprout";
 import { GrowthVine } from "./components/GrowthVine";
 import { BottomNav } from "@/features/nav/components/BottomNav";
-import { getTotalReturns } from "@/features/history/store";
-import { readLastPage } from "@/features/reader/lib/lastPage";
+import { getTotalSessions } from "@/features/history/store";
+import { getRecommendedPage } from "@/features/reader/lib/recommendedPage";
 import { getSettings } from "@/features/settings/store";
 import { DEFAULT_SETTINGS, type Settings } from "@/features/settings/lib/types";
 import { buildSessionPlan } from "@/features/session/lib/plan";
@@ -42,11 +42,11 @@ const DEFAULT_AYAH: WaitingAyah = {
 // background shifts with time of day. See design-visual.md §Garden home.
 export function GardenHome({
   name = "Rasheed",
-  returns: returnsProp,
+  sessions: sessionsProp,
   ayah: ayahProp,
 }: {
   name?: string;
-  returns?: number;
+  sessions?: number;
   ayah?: WaitingAyah;
 }) {
   // Mood comes from the app-wide shell (single source of truth). The weekday
@@ -54,8 +54,8 @@ export function GardenHome({
   // mismatch (the shell handles the same for the background wash).
   const mood = useMood();
   const [weekday, setWeekday] = useState("");
-  const [returns, setReturns] = useState(returnsProp ?? 0);
-  const [readerHref, setReaderHref] = useState("/reader/1");
+  const [sessions, setSessions] = useState(sessionsProp ?? 0);
+  const [enterBase, setEnterBase] = useState("/reader/1");
   // Settings drive the hero ayah and session plan; load after mount (the
   // server has no localStorage, so SSR renders the neutral default).
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -65,13 +65,13 @@ export function GardenHome({
   }, []);
 
   useEffect(() => {
-    if (returnsProp === undefined) {
-      setReturns(getTotalReturns());
+    if (sessionsProp === undefined) {
+      setSessions(getTotalSessions());
     }
-  }, [returnsProp]);
+  }, [sessionsProp]);
 
   useEffect(() => {
-    setReaderHref(`/reader/${readLastPage()}`);
+    setEnterBase(`/reader/${getRecommendedPage()}`);
   }, []);
 
   useEffect(() => {
@@ -99,9 +99,6 @@ export function GardenHome({
   })();
   const ayah = ayahProp ?? derivedAyah ?? DEFAULT_AYAH;
 
-  // Deep-link the entry cards into the first plan step when there is one,
-  // otherwise resume the last-visited page.
-  const enterBase = plan[0] ? `/reader/${plan[0].page}` : readerHref;
   const planNames = plan.map((s) => s.name);
   const hasLists = settings.memorized.length + settings.memorizing.length > 0;
 
@@ -118,7 +115,7 @@ export function GardenHome({
               {theme.greeting(name)}
             </h1>
           </div>
-          <GrowthVine returns={returns} className="mt-2 shrink-0" />
+          <GrowthVine sessions={sessions} className="mt-2 shrink-0" />
         </header>
 
         {/* hero: the waiting ayah, faint sprout behind it */}
@@ -131,7 +128,7 @@ export function GardenHome({
             <p dir="rtl" className="font-arabic text-[2.15rem] leading-[2.5] text-foreground">
               {ayah.arabic}
             </p>
-            <p className="font-display text-lg italic leading-relaxed text-foreground/70">
+            <p className="font-display text-lg font-semibold italic leading-relaxed text-foreground">
               {ayah.meaning}
             </p>
           </div>
@@ -173,7 +170,9 @@ export function GardenHome({
                 S
               </span>
               <span className="font-semibold">Study</span>
-              <span className="text-xs opacity-80">Reads track your words</span>
+              <span className="text-sm leading-snug opacity-90">
+                Tap any word for its meaning — each tap is remembered and brought back for review.
+              </span>
             </Link>
             <Link
               href={`${enterBase}?mode=mushaf`}
@@ -183,7 +182,9 @@ export function GardenHome({
                 M
               </span>
               <span className="font-semibold">Mushaf</span>
-              <span className="text-xs text-muted-foreground">Read freely, no tracking</span>
+              <span className="text-sm leading-snug text-muted-foreground">
+                Read the full page with all its marks, at your own pace — nothing is tracked.
+              </span>
             </Link>
           </div>
         </div>
