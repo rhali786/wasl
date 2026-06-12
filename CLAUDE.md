@@ -42,6 +42,16 @@ as dormant until that work begins. See `docs/design.md` §4 (Architecture).
   implemented, tests pass, and `npm run build` is green, create a git commit
   for that round's changes — the user has pre-authorized this, no need to ask
   each time.
+- **Deploy branch is `master` only.** Never deploy from feature branches or
+  `main`. Production / Vercel (or any host) must track **`origin/master`**.
+- **After every commit — merge, stay on `master`, push.** Workflow:
+  1. Commit on the working branch (feature branch is fine).
+  2. `git checkout master`
+  3. `git merge <branch>` (prefer fast-forward when possible)
+  4. `git push origin master`
+  5. **Remain on `master`** for the next task — do not switch back to a
+     feature branch unless the user asks.
+  Do not ask before pushing to `master`; the user has pre-authorized it.
 
 ---
 
@@ -206,15 +216,16 @@ The default shell here is **PowerShell**, not bash. Apply these:
   multi-line `gh` PR/issue bodies, write a temp file and use `--body-file`:
   ```
   Set-Content -Path .pr-body.txt -Value $body
-  gh pr create --base main --head <branch> --title "<title>" --body-file .pr-body.txt
+  gh pr create --base master --head <branch> --title "<title>" --body-file .pr-body.txt
   Remove-Item .pr-body.txt
   ```
 - **Idempotent PR creation** — `gh pr create` errors if a PR already exists
   for the branch. Check first: `gh pr list --head <branch> --json number`; if
   non-empty, `gh pr edit <number> --body-file …` instead.
 - **Merges must not open an editor or create surprise merge commits** — use
-  `git merge --ff-only origin/main` (stop and report on failure) or
-  `--no-edit` when a merge commit is intended.
+  `git merge --ff-only origin/master` (stop and report on failure) or
+  `--no-edit` when a merge commit is intended. This repo uses **`master`**, not
+  `main`.
 - **Branches:** create with `git checkout -b <branch>` on first creation only.
   On resume/re-run use plain `git checkout <branch>` — **never**
   `git checkout -B`, which resets the branch to its base and destroys
@@ -245,6 +256,9 @@ Confirm which database is targeted before running migrations.
 ## CI and deploy
 
 - Run `npm ci` → `npm run build` → `npm test` before pushing.
+- **Push only `master`.** After each commit: merge into `master`, stay on
+  `master`, `git push origin master`. Feature branches are for local WIP only —
+  they are not deploy targets.
 - Do **not** commit deploy hook URLs or secrets.
 
 ---
