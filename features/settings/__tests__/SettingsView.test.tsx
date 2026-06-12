@@ -56,6 +56,28 @@ describe("SettingsView", () => {
     expect(replace).toHaveBeenCalledWith("/login");
   });
 
+  it("places the account controls (name + log out) above session length", () => {
+    signUp("rasheed@example.com");
+    render(<SettingsView surahs={SURAHS} />);
+
+    const logOutBtn = screen.getByRole("button", { name: /log out/i });
+    const sessionHeading = screen.getByText("Session length");
+    expect(
+      logOutBtn.compareDocumentPosition(sessionHeading) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("lets the user set a display name", () => {
+    signUp("rasheed@example.com");
+    render(<SettingsView surahs={SURAHS} />);
+
+    const nameInput = screen.getByLabelText(/name/i);
+    fireEvent.change(nameInput, { target: { value: "Rashy" } });
+
+    expect(getSettings().name).toBe("Rashy");
+    expect(nameInput).toHaveValue("Rashy");
+  });
+
   it("steps the session length by 5 minutes and never below the floor", () => {
     render(<SettingsView surahs={SURAHS} />);
     expect(screen.getByTestId("session-minutes").textContent).toMatch(/5/);

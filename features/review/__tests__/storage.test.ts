@@ -1,4 +1,5 @@
 import { readStatuses, writeStatuses } from "../lib/storage";
+import { signIn, signUp } from "@/features/settings/store";
 import type { WordStatus } from "../lib/types";
 
 jest.mock("@/features/lib/logger", () => ({
@@ -34,5 +35,17 @@ describe("review storage (localStorage boundary)", () => {
     writeStatuses({ a: { id: "a", level: 1, cleanReads: 1 } });
     writeStatuses({ b: { id: "b", level: 2, cleanReads: 3 } });
     expect(readStatuses()).toEqual({ b: { id: "b", level: 2, cleanReads: 3 } });
+  });
+
+  it("isolates word statuses per signed-in account", () => {
+    signUp("a@example.com");
+    writeStatuses({ a: { id: "a", level: 1, cleanReads: 1 } });
+
+    signUp("b@example.com");
+    expect(readStatuses()).toEqual({});
+    writeStatuses({ b: { id: "b", level: 2, cleanReads: 2 } });
+
+    signIn("a@example.com");
+    expect(readStatuses()).toEqual({ a: { id: "a", level: 1, cleanReads: 1 } });
   });
 });

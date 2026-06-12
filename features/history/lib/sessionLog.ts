@@ -3,12 +3,15 @@
 // per-day Returns grid, which marks whether you read that day at all).
 
 import { logger } from "@/features/lib/logger";
+import { migrateLegacyKey, scopedKey } from "@/features/lib/userScope";
 
-const STORAGE_KEY = "wird:completedSessions";
+const BASE_KEY = "completedSessions";
+const LEGACY_KEY = "wird:completedSessions";
 
 export function readCompletedSessions(): number[] {
   if (typeof window === "undefined") return [];
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  migrateLegacyKey(LEGACY_KEY, BASE_KEY);
+  const raw = window.localStorage.getItem(scopedKey(BASE_KEY));
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
@@ -23,7 +26,7 @@ export function readCompletedSessions(): number[] {
 export function writeCompletedSessions(completedAt: number[]): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(completedAt));
+    window.localStorage.setItem(scopedKey(BASE_KEY), JSON.stringify(completedAt));
   } catch (err) {
     logger.error({ err }, "failed to persist completed sessions");
   }

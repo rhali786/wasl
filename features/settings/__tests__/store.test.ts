@@ -2,6 +2,7 @@ import {
   getSettings,
   needsLogin,
   needsOnboarding,
+  setName,
   signIn,
   signOut,
   signUp,
@@ -30,6 +31,11 @@ describe("settings store — account (sign-up / sign-in / sign-out)", () => {
 
     it("grandfathers existing local users who already have progress data", () => {
       window.localStorage.setItem("wird:wordStatuses", "{}");
+      expect(needsOnboarding()).toBe(false);
+    });
+
+    it("grandfathers users whose data has already migrated to the guest scope", () => {
+      window.localStorage.setItem("wird:guest:wordStatuses", "{}");
       expect(needsOnboarding()).toBe(false);
     });
   });
@@ -90,6 +96,21 @@ describe("settings store — account (sign-up / sign-in / sign-out)", () => {
 
     it("signIn rejects an invalid email", () => {
       expect(() => signIn("nope")).toThrow();
+    });
+  });
+
+  describe("setName", () => {
+    it("stores a trimmed display name", () => {
+      signUp("rasheed@example.com");
+      const result = setName("  Rashy  ");
+      expect(result.name).toBe("Rashy");
+      expect(getSettings().name).toBe("Rashy");
+    });
+
+    it("clears the name when set to an empty value", () => {
+      signUp("rasheed@example.com");
+      setName("");
+      expect(getSettings().name).toBeUndefined();
     });
   });
 });

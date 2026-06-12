@@ -4,13 +4,16 @@
 // server in Next.js before hydration.
 
 import { logger } from "@/features/lib/logger";
+import { migrateLegacyKey, scopedKey } from "@/features/lib/userScope";
 import type { WordStatus } from "./types";
 
-const STORAGE_KEY = "wird:wordStatuses";
+const BASE_KEY = "wordStatuses";
+const LEGACY_KEY = "wird:wordStatuses";
 
 export function readStatuses(): Record<string, WordStatus> {
   if (typeof window === "undefined") return {};
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  migrateLegacyKey(LEGACY_KEY, BASE_KEY);
+  const raw = window.localStorage.getItem(scopedKey(BASE_KEY));
   if (!raw) return {};
   try {
     return JSON.parse(raw) as Record<string, WordStatus>;
@@ -23,7 +26,7 @@ export function readStatuses(): Record<string, WordStatus> {
 export function writeStatuses(statuses: Record<string, WordStatus>): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
+    window.localStorage.setItem(scopedKey(BASE_KEY), JSON.stringify(statuses));
   } catch (err) {
     logger.error({ err }, "failed to persist word statuses");
   }

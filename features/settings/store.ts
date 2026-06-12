@@ -6,6 +6,7 @@ import {
   displayNameFromEmail,
   isValidEmail,
 } from "@/features/onboarding/lib/email";
+import { scopedKey } from "@/features/lib/userScope";
 import { MIN_SESSION_MINUTES, SESSION_MINUTE_STEP, type Settings } from "./lib/types";
 import { readSettings, writeSettings } from "./lib/storage";
 
@@ -20,8 +21,12 @@ export function needsOnboarding(): boolean {
   // Grandfather existing local users who were already using the app.
   if (s.memorized.length > 0 || s.memorizing.length > 0) return false;
   if (typeof window !== "undefined") {
+    // Check both pre-scoping legacy keys and the post-migration "guest" scope —
+    // migration runs lazily on first read, so either may hold the data.
     if (window.localStorage.getItem("wird:wordStatuses")) return false;
     if (window.localStorage.getItem("wird:completedSessions")) return false;
+    if (window.localStorage.getItem(scopedKey("wordStatuses"))) return false;
+    if (window.localStorage.getItem(scopedKey("completedSessions"))) return false;
   }
   return true;
 }
@@ -66,6 +71,14 @@ export function signOut(): Settings {
     name: undefined,
     signedOut: true,
   };
+  writeSettings(next);
+  return next;
+}
+
+/** Set or clear the display name shown in greetings and Settings. */
+export function setName(name: string): Settings {
+  const trimmed = name.trim();
+  const next: Settings = { ...readSettings(), name: trimmed || undefined };
   writeSettings(next);
   return next;
 }

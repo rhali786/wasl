@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SESSION_MINUTE_STEP, type Settings } from "../lib/types";
 import {
   getSettings,
+  setName,
   setSessionMinutes,
   signOut,
   toggleMemorized,
@@ -39,6 +40,34 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
         </p>
         <h1 className="mt-1 text-xl font-semibold text-foreground">Your review</h1>
       </header>
+
+      {/* Account — local email identity, display name, sign out */}
+      <section className="mt-4 flex items-start justify-between gap-3 rounded-2xl bg-card p-4 ring-1 ring-border">
+        <label className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
+            Name
+          </span>
+          <input
+            type="text"
+            value={settings.name ?? ""}
+            onChange={(e) => setSettings(setName(e.target.value))}
+            placeholder="Your name"
+            className="rounded-xl bg-background px-3 py-2 text-sm text-foreground ring-1 ring-border outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-garden-500"
+          />
+          {settings.email ? (
+            <span className="text-xs text-muted-foreground">{settings.email}</span>
+          ) : null}
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleLogOut}
+          className="mt-5 shrink-0 rounded-full"
+        >
+          Log out
+        </Button>
+      </section>
 
       {/* Session length — 5-minute increments */}
       <section className="mt-8">
@@ -128,24 +157,6 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
             );
           })}
         </ul>
-      </section>
-
-      {/* Account — local email identity, sign out returns to /login */}
-      <section className="mt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-          Account
-        </p>
-        {settings.email ? (
-          <p className="mt-1 text-sm text-muted-foreground">{settings.email}</p>
-        ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleLogOut}
-          className="mt-3 h-10 w-full rounded-2xl text-sm font-semibold"
-        >
-          Log out
-        </Button>
       </section>
     </div>
   );
