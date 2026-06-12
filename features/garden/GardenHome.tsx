@@ -6,6 +6,7 @@ import { MOOD_THEME } from "@/features/lib/timeOfDay";
 import { useMood } from "@/features/shell/components/MoodContext";
 import { Sprout } from "./components/Sprout";
 import { GrowthVine } from "./components/GrowthVine";
+import { markHowItWorksSeen, readHowItWorksSeen } from "./lib/howItWorks";
 import { BottomNav } from "@/features/nav/components/BottomNav";
 import { getTotalSessions } from "@/features/history/store";
 import { getRecommendedPage } from "@/features/reader/lib/recommendedPage";
@@ -65,10 +66,22 @@ export function GardenHome({
   // server has no localStorage, so SSR renders the neutral default).
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [greeting, setGreeting] = useState<GardenGreeting | null>(null);
+  // First-visit explainer — new readers don't get the two-room model or
+  // tap-to-reveal from the UI alone. Shown once, then remembered.
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   useEffect(() => {
     setWeekday(new Date().toLocaleDateString(undefined, { weekday: "long" }));
   }, []);
+
+  useEffect(() => {
+    if (!readHowItWorksSeen()) setShowHowItWorks(true);
+  }, []);
+
+  function dismissHowItWorks() {
+    setShowHowItWorks(false);
+    markHowItWorksSeen();
+  }
 
   useEffect(() => {
     setGreeting(pickGreeting(mood, greetingIndex));
@@ -214,6 +227,45 @@ export function GardenHome({
       </div>
 
       <BottomNav />
+
+      {/* first-visit explainer — a single dismissible card. What the app is,
+          the two rooms, and the one gesture (tap) that drives everything. */}
+      {showHowItWorks ? (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-background/90 px-6 backdrop-blur-sm">
+          <div
+            data-testid="how-it-works"
+            className="w-full max-w-[360px] rounded-3xl bg-card p-6 text-left ring-1 ring-border shadow-[0_24px_48px_-24px_rgba(20,83,45,0.5)]"
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
+              How Wird works
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">
+              Read a little, every day
+            </h2>
+            <ul className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground">
+              <li>
+                <span className="font-semibold text-foreground">Tap any word</span>{" "}
+                to see what it means. Each tap is remembered and brought back for
+                review.
+              </li>
+              <li>
+                <span className="font-semibold text-foreground">Study</span> tracks
+                what you know — words start hazy and clear as they become familiar.
+              </li>
+              <li>
+                <span className="font-semibold text-foreground">Mushaf</span> is the
+                full page to read freely — nothing is tracked.
+              </li>
+            </ul>
+            <button
+              onClick={dismissHowItWorks}
+              className="mt-6 w-full rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

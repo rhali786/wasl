@@ -30,6 +30,12 @@ describe("SettingsView", () => {
     expect(screen.getByText("Al-Falaq")).toBeInTheDocument();
   });
 
+  it("explains the difference between memorizing and memorized", () => {
+    render(<SettingsView surahs={SURAHS} />);
+    expect(screen.getByText(/still learning it/i)).toBeInTheDocument();
+    expect(screen.getByText(/know it by heart/i)).toBeInTheDocument();
+  });
+
   it("persists a sūrah when marked memorized", () => {
     render(<SettingsView surahs={SURAHS} />);
     fireEvent.click(screen.getByRole("button", { name: "Memorized: Al-Ikhlas" }));

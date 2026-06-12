@@ -205,7 +205,7 @@ describe("Reader", () => {
     expect(startStudySession).toHaveBeenCalledTimes(1);
   });
 
-  it("switching the slider to Mushaf ends an active session without the summary overlay", () => {
+  it("switching the slider to Mushaf with an active session asks to confirm before ending it", () => {
     const endSession = jest.fn();
     mockUseSession.mockReturnValue({
       ...noSession(),
@@ -215,7 +215,40 @@ describe("Reader", () => {
     render(<Reader page={PAGE} initialMode="study" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Mushaf" }));
+
+    // The session is not ended until she confirms — and the mode stays on Study.
+    expect(endSession).not.toHaveBeenCalled();
+    expect(screen.getByTestId("mushaf-confirm")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Study" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Switch" }));
+
     expect(endSession).toHaveBeenCalledWith({ summary: false });
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("the Mushaf-switch confirm can be cancelled, keeping the session and Study mode", () => {
+    const endSession = jest.fn();
+    mockUseSession.mockReturnValue({
+      ...noSession(),
+      session: ACTIVE_SESSION,
+      endSession,
+    });
+    render(<Reader page={PAGE} initialMode="study" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Mushaf" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep reading" }));
+
+    expect(endSession).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("mushaf-confirm")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Study" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("switching the slider to Mushaf with no active session never asks to confirm", () => {
+    render(<Reader page={PAGE} initialMode="study" />);
+    fireEvent.click(screen.getByRole("button", { name: "Mushaf" }));
+    expect(screen.queryByTestId("mushaf-confirm")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("Mushaf mode persists across page navigation (sticky until the slider is used)", () => {
@@ -376,6 +409,32 @@ describe("Reader", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("shows a one-time 'tap a word' coach hint on the first Study entry", () => {
+    render(<Reader page={PAGE} initialMode="study" />);
+    expect(screen.getByTestId("reader-coach")).toHaveTextContent(/tap any word/i);
+  });
+
+  it("does not show the coach hint once it has been seen", () => {
+    window.localStorage.setItem("wird:readerCoachSeen", "1");
+    render(<Reader page={PAGE} initialMode="study" />);
+    expect(screen.queryByTestId("reader-coach")).not.toBeInTheDocument();
+  });
+
+  it("does not show the coach hint in Mushaf mode", () => {
+    render(<Reader page={PAGE} initialMode="mushaf" />);
+    expect(screen.queryByTestId("reader-coach")).not.toBeInTheDocument();
+  });
+
+  it("dismissing the coach hint hides it and remembers it for next time", () => {
+    const { unmount } = render(<Reader page={PAGE} initialMode="study" />);
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss tip" }));
+    expect(screen.queryByTestId("reader-coach")).not.toBeInTheDocument();
+    unmount();
+
+    render(<Reader page={PAGE} initialMode="study" />);
+    expect(screen.queryByTestId("reader-coach")).not.toBeInTheDocument();
   });
 
   it("no longer shows a 'Done for now' button", () => {

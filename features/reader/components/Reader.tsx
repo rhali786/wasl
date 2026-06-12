@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Hand, X } from "lucide-react";
 import { FitLine } from "./FitLine";
 import { Ticks } from "./Ticks";
 import { UnknownHaze } from "./UnknownHaze";
 import { stripTashkil } from "../lib/displayText";
 import { readReaderMode, writeReaderMode } from "../lib/readerMode";
+import { markReaderCoachSeen, readReaderCoachSeen } from "../lib/coachHint";
 import type { ReaderMode } from "../lib/types";
 import { getStatuses, demoteWord, finishPage } from "@/features/review/store";
 import { useSession } from "@/features/session/components/SessionProvider";
@@ -122,6 +123,10 @@ export function Reader({
   const [flashCount, setFlashCount] = useState<number | null>(null);
   const [flashVisible, setFlashVisible] = useState(false);
   const [flashLeaving, setFlashLeaving] = useState(false);
+  // One-time "tap a word" coach hint (first Study entry only) and the
+  // "switching to Mushaf ends your session" confirm.
+  const [showCoach, setShowCoach] = useState(false);
+  const [confirmMushaf, setConfirmMushaf] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const accent = ACCENT[mode];
@@ -179,6 +184,16 @@ export function Reader({
     };
   }, [flashCount]);
 
+  // The core loop (tap → reveal → status) is invisible once you're on the
+  // page, so the first time the reader is in Study mode show a single
+  // dismissible cue. Marked seen on display so it never returns.
+  useEffect(() => {
+    if (mode === "study" && !readReaderCoachSeen()) {
+      setShowCoach(true);
+      markReaderCoachSeen();
+    }
+  }, [mode]);
+
   // An explicit ?mode= on entry (home cards, nav Reader tab) wins and is
   // persisted. Page-to-page navigation carries no query — mode comes from the
   // lazy initializer + localStorage, so the slider never flashes Study first.
@@ -188,7 +203,7 @@ export function Reader({
     writeReaderMode(initialMode);
   }, [initialMode]);
 
-  function switchMode(next: ReaderMode) {
+  function applyMode(next: ReaderMode) {
     setMode(next);
     writeReaderMode(next);
     if (next === "study") {
@@ -196,6 +211,17 @@ export function Reader({
     } else if (session) {
       endSession({ summary: false });
     }
+  }
+
+  // Sliding to Mushaf ends an active session — that's silent and unpredictable
+  // for a new reader, so confirm first. With no session there is nothing to
+  // lose, so switch straight away.
+  function switchMode(next: ReaderMode) {
+    if (next === "mushaf" && session) {
+      setConfirmMushaf(true);
+      return;
+    }
+    applyMode(next);
   }
 
   function tap(key: string, word: CorpusWord, line: number) {
@@ -314,6 +340,55 @@ export function Reader({
             <ModeSlider mode={mode} onChange={switchMode} />
           </div>
         </div>
+
+        {/* coach hint — the one-time "tap a word" cue; the core loop is
+            otherwise undiscoverable on the page. Calm, dismissable. */}
+        {showCoach ? (
+          <div
+            data-testid="reader-coach"
+            className="relative z-20 mx-4 mt-1 flex items-center gap-3 rounded-xl bg-card px-3 py-2 text-sm ring-1 ring-border"
+          >
+            <Hand className="size-4 shrink-0 text-garden-600" strokeWidth={1.75} />
+            <span className="flex-1 text-foreground">
+              Tap any word to see what it means.
+            </span>
+            <button
+              onClick={() => setShowCoach(false)}
+              aria-label="Dismiss tip"
+              className="grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        ) : null}
+
+        {/* Mushaf-switch confirm — sliding to Mushaf ends the session, so warn
+            before discarding it (a child won't predict the silent end). */}
+        {confirmMushaf ? (
+          <div
+            data-testid="mushaf-confirm"
+            className="relative z-20 mx-4 mt-1 flex items-center gap-3 rounded-xl bg-card px-3 py-2 text-sm ring-1 ring-border"
+          >
+            <span className="flex-1 text-foreground">
+              Switch to Mushaf? This ends your session.
+            </span>
+            <button
+              onClick={() => setConfirmMushaf(false)}
+              className="rounded-full px-3 py-1 text-xs font-semibold text-muted-foreground ring-1 ring-border"
+            >
+              Keep reading
+            </button>
+            <button
+              onClick={() => {
+                setConfirmMushaf(false);
+                applyMode("mushaf");
+              }}
+              className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+            >
+              Switch
+            </button>
+          </div>
+        ) : null}
 
         {/* session nudge — at a step boundary ("now your memorized sūrah") or
             when the time is up. Calm, dismissable, never blocking. */}

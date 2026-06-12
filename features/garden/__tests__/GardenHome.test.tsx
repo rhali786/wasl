@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 // motion and lucide-react are ESM-only; ts-jest only transforms .tsx? files,
 // so mock them at the boundary to keep this a focused render test.
@@ -93,6 +93,8 @@ describe("GardenHome", () => {
   });
 
   it("offers Study and Mushaf as the mode choice", () => {
+    // Past the first-visit explainer (which also names the two modes).
+    window.localStorage.setItem("wird:howItWorksSeen", "1");
     render(<GardenHome name="Rasheed" />);
     expect(screen.getByText("Study")).toBeInTheDocument();
     expect(screen.getByText("Mushaf")).toBeInTheDocument();
@@ -141,6 +143,30 @@ describe("GardenHome", () => {
     render(<GardenHome name="Rasheed" />);
     const link = await screen.findByRole("link", { name: /Study/ });
     expect(link).toHaveAttribute("href", "/reader/1?mode=study");
+  });
+
+  it("shows a one-time 'how this works' card on the first visit", () => {
+    render(<GardenHome name="Rasheed" />);
+    const card = screen.getByTestId("how-it-works");
+    expect(card).toHaveTextContent(/study/i);
+    expect(card).toHaveTextContent(/mushaf/i);
+    expect(card).toHaveTextContent(/tap/i);
+  });
+
+  it("does not show the 'how this works' card once it has been seen", () => {
+    window.localStorage.setItem("wird:howItWorksSeen", "1");
+    render(<GardenHome name="Rasheed" />);
+    expect(screen.queryByTestId("how-it-works")).not.toBeInTheDocument();
+  });
+
+  it("dismissing the 'how this works' card hides it and remembers it", () => {
+    const { unmount } = render(<GardenHome name="Rasheed" />);
+    fireEvent.click(screen.getByRole("button", { name: /got it/i }));
+    expect(screen.queryByTestId("how-it-works")).not.toBeInTheDocument();
+    unmount();
+
+    render(<GardenHome name="Rasheed" />);
+    expect(screen.queryByTestId("how-it-works")).not.toBeInTheDocument();
   });
 
   it("points to Settings when no sūrahs are chosen yet", () => {

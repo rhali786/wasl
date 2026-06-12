@@ -106,6 +106,12 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
         <p className="mt-1 text-sm text-muted-foreground">
           Your session draws from these. The rest become breadth.
         </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Memorizing</span> = still
+          learning it ·{" "}
+          <span className="font-medium text-foreground">Memorized</span> = you know
+          it by heart.
+        </p>
         <ul className="mt-3 flex flex-col gap-1">
           {surahs.map((surah) => {
             const isMemorized = settings.memorized.includes(surah.number);
