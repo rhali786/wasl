@@ -9,6 +9,14 @@ export interface Settings {
   memorizing: number[];
   /** Session length in minutes; adjusted in 5-minute increments. */
   sessionMinutes: number;
+  /** Email collected at onboarding — local-only in v1, no verification. */
+  email?: string;
+  /** Display name for greetings; derived from email when the user signs up. */
+  name?: string;
+  /** Set when onboarding (email sign-up) is finished. */
+  onboardingComplete?: boolean;
+  /** Set on log out; cleared on next sign-in. Routes to /login until then. */
+  signedOut?: boolean;
 }
 
 /** Session duration floor and step (design.md §53 — 5-minute increments). */

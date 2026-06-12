@@ -3,6 +3,7 @@ import { Hanken_Grotesk, Amiri_Quran, Cormorant_Garamond } from "next/font/googl
 import "./globals.css";
 import { MoodShell } from "@/features/shell/components/MoodShell";
 import { SessionProvider } from "@/features/session/components/SessionProvider";
+import { AuthGate } from "@/features/onboarding/components/AuthGate";
 
 // UI / system chrome — labels, numbers, buttons, navigation (design-visual.md §Typography)
 const hanken = Hanken_Grotesk({
@@ -42,9 +43,11 @@ export default function RootLayout({
       className={`${hanken.variable} ${amiriQuran.variable} ${cormorant.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <MoodShell>
-          <SessionProvider>{children}</SessionProvider>
-        </MoodShell>
+        <AuthGate>
+          <MoodShell>
+            <SessionProvider>{children}</SessionProvider>
+          </MoodShell>
+        </AuthGate>
       </body>
     </html>
   );

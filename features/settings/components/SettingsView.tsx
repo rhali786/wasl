@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Minus, Plus } from "lucide-react";
 import type { SurahIndexEntry } from "@/features/corpus/lib/types";
+import { Button } from "@/components/ui/button";
 import { SESSION_MINUTE_STEP, type Settings } from "../lib/types";
 import {
   getSettings,
   setSessionMinutes,
+  signOut,
   toggleMemorized,
   toggleMemorizing,
 } from "../store";
@@ -15,12 +18,18 @@ import {
 // (these drive the session plan and home hero) and tunes session length.
 // A Garden hub screen: calm, semantic palette, no dashboards.
 export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
+  const router = useRouter();
   // SSR-neutral defaults; real settings load after mount (localStorage).
   const [settings, setSettings] = useState<Settings>(getSettings);
 
   useEffect(() => {
     setSettings(getSettings());
   }, []);
+
+  function handleLogOut() {
+    signOut();
+    router.replace("/login");
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-6 pb-28 pt-8">
@@ -119,6 +128,24 @@ export function SettingsView({ surahs }: { surahs: SurahIndexEntry[] }) {
             );
           })}
         </ul>
+      </section>
+
+      {/* Account — local email identity, sign out returns to /login */}
+      <section className="mt-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
+          Account
+        </p>
+        {settings.email ? (
+          <p className="mt-1 text-sm text-muted-foreground">{settings.email}</p>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleLogOut}
+          className="mt-3 h-10 w-full rounded-2xl text-sm font-semibold"
+        >
+          Log out
+        </Button>
       </section>
     </div>
   );

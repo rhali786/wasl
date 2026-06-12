@@ -1,11 +1,16 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { SettingsView } from "../components/SettingsView";
-import { getSettings } from "../store";
+import { getSettings, signUp } from "../store";
 import type { SurahIndexEntry } from "@/features/corpus/lib/types";
 
 jest.mock("@/features/lib/logger", () => ({
   logger: { warn: jest.fn(), error: jest.fn() },
+}));
+
+const replace = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ replace }),
 }));
 
 const SURAHS: SurahIndexEntry[] = [
@@ -37,6 +42,18 @@ describe("SettingsView", () => {
     expect(
       screen.getByRole("button", { name: "Memorizing: Al-Ikhlas" })
     ).toBeDisabled();
+  });
+
+  it("shows the signed-in email and logs out to /login", () => {
+    signUp("rasheed@example.com");
+    render(<SettingsView surahs={SURAHS} />);
+
+    expect(screen.getByText("rasheed@example.com")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /log out/i }));
+
+    expect(getSettings().email).toBeUndefined();
+    expect(getSettings().signedOut).toBe(true);
+    expect(replace).toHaveBeenCalledWith("/login");
   });
 
   it("steps the session length by 5 minutes and never below the floor", () => {
