@@ -11,6 +11,7 @@ import { getTotalSessions } from "@/features/history/store";
 import { getRecommendedPage } from "@/features/reader/lib/recommendedPage";
 import { getSettings } from "@/features/settings/store";
 import { DEFAULT_SETTINGS, type Settings } from "@/features/settings/lib/types";
+import { toArabicName } from "@/features/garden/lib/arabicName";
 import { pickGreeting, type GardenGreeting } from "@/features/garden/lib/greetings";
 import { buildSessionPlan } from "@/features/session/lib/plan";
 import surahsData from "@/features/corpus/data/surahs.json";
@@ -133,7 +134,7 @@ export function GardenHome({
                 lang="ar"
                 className="mt-1 font-arabic text-base leading-relaxed text-muted-foreground"
               >
-                {greeting.arabic(name)}
+                {greeting.arabic(toArabicName(name))}
               </p>
             ) : null}
           </div>
