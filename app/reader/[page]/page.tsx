@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { loadPage } from "@/features/corpus/lib/pages";
 import { TOTAL_PAGES } from "@/features/corpus/lib/types";
 import { ReaderRoute } from "@/features/reader/components/ReaderRoute";
+import { BottomNav } from "@/features/nav/components/BottomNav";
 import type { ReaderMode } from "@/features/reader/lib/types";
 
 function parseMode(value: string | undefined): ReaderMode | undefined {
@@ -22,12 +23,13 @@ export default async function ReaderPage({
     notFound();
   }
   return (
-    <div className="h-dvh">
+    <div className="relative h-dvh">
       <ReaderRoute
         page={loadPage(pageNumber)}
         pageNumber={pageNumber}
         initialMode={parseMode(mode)}
       />
+      <BottomNav />
     </div>
   );
 }

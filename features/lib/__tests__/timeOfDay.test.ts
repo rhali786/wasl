@@ -1,4 +1,4 @@
-import { moodForHour, MOOD_THEME, type Mood } from "../lib/timeOfDay";
+import { moodForHour, MOOD_THEME, type Mood } from "../timeOfDay";
 
 describe("moodForHour", () => {
   it.each<[number, Mood]>([

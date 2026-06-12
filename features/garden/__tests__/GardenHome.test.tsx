@@ -45,6 +45,10 @@ jest.mock("@/features/reader/lib/lastPage", () => ({
 import { GardenHome } from "../GardenHome";
 
 describe("GardenHome", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it("renders the waiting ayah as the hero, with its meaning and reference", () => {
     render(<GardenHome name="Rasheed" />);
     expect(
@@ -96,5 +100,31 @@ describe("GardenHome", () => {
     render(<GardenHome name="Rasheed" />);
     const link = await screen.findByRole("link", { name: /Mushaf/ });
     expect(link).toHaveAttribute("href", "/reader/7?mode=mushaf");
+  });
+
+  it("points to Settings when no sūrahs are chosen yet", () => {
+    render(<GardenHome name="Rasheed" />);
+    expect(screen.getByText(/Set your sūrahs/)).toBeInTheDocument();
+  });
+
+  it("derives the hero ayah from the sūrah being memorized", async () => {
+    window.localStorage.setItem(
+      "wird:settings",
+      JSON.stringify({ memorized: [], memorizing: [112], sessionMinutes: 5 })
+    );
+    render(<GardenHome name="Rasheed" />);
+    // Al-Ikhlās opening replaces the default Az-Zalzalah hero (assert on the
+    // ASCII meaning — exact Arabic diacritic matching is brittle).
+    expect(await screen.findByText(/Say He .*Allah the One/i)).toBeInTheDocument();
+    expect(screen.queryByText(/When the earth is shaken/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the session path hint built from the plan", async () => {
+    window.localStorage.setItem(
+      "wird:settings",
+      JSON.stringify({ memorized: [], memorizing: [112], sessionMinutes: 5 })
+    );
+    render(<GardenHome name="Rasheed" />);
+    expect(await screen.findByText(/Today’s path/)).toBeInTheDocument();
   });
 });

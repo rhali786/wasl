@@ -11,13 +11,21 @@ jest.mock("@/features/history/store", () => ({
   recordReturn: jest.fn(),
 }));
 
+jest.mock("@/features/session/store", () => ({
+  hasMoved: jest.fn(() => false),
+  markMoved: jest.fn(),
+}));
+
 import { readStatuses, writeStatuses } from "../lib/storage";
 import { recordMovement, recordReturn } from "@/features/history/store";
+import { hasMoved, markMoved } from "@/features/session/store";
 
 const mockRead = readStatuses as jest.Mock;
 const mockWrite = writeStatuses as jest.Mock;
 const mockRecordMovement = recordMovement as jest.Mock;
 const mockRecordReturn = recordReturn as jest.Mock;
+const mockHasMoved = hasMoved as jest.Mock;
+const mockMarkMoved = markMoved as jest.Mock;
 
 describe("review store", () => {
   let backing: Record<string, WordStatus>;
@@ -28,6 +36,7 @@ describe("review store", () => {
     mockWrite.mockImplementation((next: Record<string, WordStatus>) => {
       backing = next;
     });
+    mockHasMoved.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -95,6 +104,22 @@ describe("review store", () => {
       expect(mockRecordReturn).toHaveBeenCalledTimes(1);
       expect(mockRecordMovement).not.toHaveBeenCalled();
     });
+
+    it("marks the word moved so it cannot move again this session", () => {
+      backing = { a: { id: "a", level: 2, cleanReads: 4 } };
+      demoteWord("a");
+      expect(mockMarkMoved).toHaveBeenCalledWith(["a"]);
+    });
+
+    it("does not demote a word already moved this session (no-op)", () => {
+      backing = { a: { id: "a", level: 2, cleanReads: 4 } };
+      mockHasMoved.mockImplementation((id: string) => id === "a");
+      const result = demoteWord("a");
+      expect(result).toEqual({ id: "a", level: 2, cleanReads: 4 });
+      expect(mockWrite).not.toHaveBeenCalled();
+      expect(mockRecordMovement).not.toHaveBeenCalled();
+      expect(mockRecordReturn).not.toHaveBeenCalled();
+    });
   });
 
   describe("finishPage (Engine A)", () => {
@@ -122,6 +147,19 @@ describe("review store", () => {
       finishPage(["a"], new Set(["a"]));
       expect(mockRecordReturn).toHaveBeenCalledTimes(1);
       expect(mockRecordMovement).not.toHaveBeenCalled();
+    });
+
+    it("does not re-promote a word-form already moved this session", () => {
+      // 'a' moved earlier this session (e.g. on a previous page); 'b' is fresh.
+      mockHasMoved.mockImplementation((id: string) => id === "a");
+      const result = finishPage(["a", "b"], new Set());
+      expect(result["a"]).toBeUndefined(); // untouched — no promotion
+      expect(result["b"]).toEqual({ id: "b", level: 1, cleanReads: 1 });
+    });
+
+    it("marks newly promoted word-forms as moved this session", () => {
+      finishPage(["a", "b"], new Set(["b"]));
+      expect(mockMarkMoved).toHaveBeenCalledWith(["a"]);
     });
   });
 });

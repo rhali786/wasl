@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { FitLine } from "./FitLine";
 import { Ticks } from "./Ticks";
 import { UnknownHaze } from "./UnknownHaze";
 import { stripTashkil } from "../lib/displayText";
 import type { ReaderMode } from "../lib/types";
 import { getStatuses, demoteWord, finishPage } from "@/features/review/store";
+import { useSession } from "@/features/session/components/SessionProvider";
 import { defaultStatus, type WordStatus } from "@/features/review/lib/types";
 import type { CorpusPage, CorpusWord } from "@/features/corpus/lib/types";
 
@@ -32,12 +33,21 @@ function defaultStatuses(ids: readonly string[]): Record<string, WordStatus> {
   return result;
 }
 
+/** Remaining session time as m:ss for the timer label. */
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function Reader({
   page,
   initialMode = "study",
   onNextPage,
   onPreviousPage,
   onExit,
+  onGoToPage,
   hasNextPage = false,
   hasPreviousPage = false,
 }: {
@@ -45,10 +55,15 @@ export function Reader({
   initialMode?: ReaderMode;
   onNextPage?: () => void;
   onPreviousPage?: () => void;
+  /** "Done for now" — leaves the reader (and the session) for the Garden. */
   onExit?: () => void;
+  /** Jump to a sūrah's page (used when accepting a session step nudge). */
+  onGoToPage?: (pageNumber: number) => void;
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
 }) {
+  const { session, remainingMs, nudge, dismissNudge, advanceStep, endSession } =
+    useSession();
   const [mode, setMode] = useState<ReaderMode>(initialMode);
   const wordIds = useMemo(() => wordIdsOf(page), [page]);
   const [statuses, setStatuses] = useState<Record<string, WordStatus>>(() =>
@@ -92,8 +107,21 @@ export function Reader({
     onPreviousPage?.();
   }
 
+  // "Done for now" — close the session and return to the Garden (the reward).
+  function done() {
+    endSession();
+    onExit?.();
+  }
+
+  // Accept a session step nudge: advance the plan and open that sūrah's page.
+  function goToStep(pageNumber: number) {
+    advanceStep();
+    dismissNudge();
+    onGoToPage?.(pageNumber);
+  }
+
   return (
-    <div className="relative flex h-full flex-col bg-[#f5efe1]">
+    <div className="relative flex h-full flex-col">
       {/* mobile-frame width: matches the Garden/Metrics 440px column so
           FitLine measures against a phone-width line, not the full
           desktop viewport (which would otherwise stretch justify-between
@@ -110,46 +138,70 @@ export function Reader({
           }}
         />
 
+        {/* session timer — present only during a session, the clear "you are
+            in a session" signal. Fills right-to-left as the time is spent
+            (design-visual.md §session timer bar). */}
+        {session ? (
+          <div
+            className="relative z-20 flex items-center gap-2 px-5 pt-2"
+            aria-label="Session in progress"
+          >
+            <span className="size-1.5 shrink-0 rounded-full bg-gold" />
+            <div
+              data-testid="session-timer"
+              className="flex h-1 flex-1 overflow-hidden rounded-full bg-border/60"
+            >
+              <div
+                className="ml-auto h-full rounded-full bg-gold transition-[width] duration-1000 ease-linear"
+                style={{ width: `${Math.round((remainingMs / session.durationMs) * 100)}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground tabular-nums">
+              {formatRemaining(remainingMs)} left
+            </span>
+          </div>
+        ) : null}
+
         {/* header — the ribbon hangs just below this, overlaying the page */}
         <div className="relative z-20">
           <div className="relative z-10 flex items-center justify-between px-5 pt-3 pb-2">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => onExit?.()}
-                className="grid size-9 place-items-center rounded-full bg-white/70 text-forest ring-1 ring-black/5"
-                aria-label="Exit reader"
-              >
-                <ArrowLeft className="size-4" />
-              </button>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-garden-700/70">
-                  {page.surah} · juz {page.juz}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  page {page.page} · {page.firstVerse}–{page.lastVerse.split(":")[1]}
-                </p>
-              </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {page.surah} · juz {page.juz}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                page {page.page} · {page.firstVerse}–{page.lastVerse.split(":")[1]}
+              </p>
             </div>
-            <button
-              onClick={() => setMode((m) => (m === "study" ? "mushaf" : "study"))}
-              className="flex items-center gap-2 rounded-full bg-white/70 py-1 pl-1 pr-3 ring-1 ring-black/5"
-              aria-label={`Mode: ${accent.name} (tap to switch)`}
-            >
-              <span
-                className="grid size-7 place-items-center rounded-full text-sm font-bold text-white"
-                style={{ background: accent.color }}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={done}
+                aria-label="Done for now"
+                className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground ring-1 ring-border"
               >
-                {accent.badge}
-              </span>
-              <span className="text-sm font-medium text-forest">{accent.name}</span>
-            </button>
+                Done for now
+              </button>
+              <button
+                onClick={() => setMode((m) => (m === "study" ? "mushaf" : "study"))}
+                className="flex items-center gap-2 rounded-full bg-card py-1 pl-1 pr-3 ring-1 ring-border"
+                aria-label={`Mode: ${accent.name} (tap to switch)`}
+              >
+                <span
+                  className="grid size-7 place-items-center rounded-full text-sm font-bold text-white"
+                  style={{ background: accent.color }}
+                >
+                  {accent.badge}
+                </span>
+                <span className="text-sm font-medium text-foreground">{accent.name}</span>
+              </button>
+            </div>
           </div>
 
           {/* the ribbon — always mounted so it never shifts the page; opacity
               + pointer-events toggle visibility */}
           <div
             data-testid="ribbon"
-            className="absolute inset-x-0 top-full z-30 flex items-center gap-3 border-t border-garden-100 bg-white/95 px-4 py-2 shadow-sm transition-all duration-300"
+            className="absolute inset-x-0 top-full z-30 flex items-center gap-3 border-t border-border bg-card px-4 py-2 shadow-sm transition-all duration-300"
             style={{
               transform: selected ? "translateY(0)" : "translateY(-6px)",
               opacity: selected ? 1 : 0,
@@ -159,15 +211,15 @@ export function Reader({
           >
             {selected ? (
               <>
-                <span dir="rtl" className="font-arabic text-xl text-forest">
+                <span dir="rtl" className="font-arabic text-xl text-foreground">
                   {selected.word.t}
                 </span>
-                <span className="font-display text-base italic text-garden-700">
+                <span className="font-display text-base italic text-muted-foreground">
                   {selected.word.en}
                 </span>
                 <button
                   onClick={() => setSelected(null)}
-                  className="ml-auto grid size-6 place-items-center rounded-full text-garden-500 hover:bg-garden-50"
+                  className="ml-auto grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent"
                   aria-label="Clear"
                 >
                   <X className="size-3.5" />
@@ -176,6 +228,49 @@ export function Reader({
             ) : null}
           </div>
         </div>
+
+        {/* session nudge — at a step boundary ("now your memorized sūrah") or
+            when the time is up. Calm, dismissable, never blocking. */}
+        {nudge ? (
+          <div
+            data-testid="session-nudge"
+            className="relative z-20 mx-4 mt-1 flex items-center gap-3 rounded-xl bg-card px-3 py-2 text-sm ring-1 ring-border"
+          >
+            {nudge.kind === "step" ? (
+              <>
+                <span className="flex-1 text-foreground">
+                  Next: your {nudge.step.category} sūrah —{" "}
+                  <span className="font-semibold">{nudge.step.name}</span>
+                </span>
+                <button
+                  onClick={() => goToStep(nudge.step.page)}
+                  className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+                >
+                  Go
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-foreground">
+                  Your time is up. Rest, or keep reading.
+                </span>
+                <button
+                  onClick={done}
+                  className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
+                >
+                  Done
+                </button>
+              </>
+            )}
+            <button
+              onClick={dismissNudge}
+              aria-label="Dismiss"
+              className="grid size-6 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        ) : null}
 
         {/* the page — 15 lines as equal vertical bands filling the height, no
             scroll. Mushaf keeps full tashkīl; Study shows bare letters. */}
@@ -235,21 +330,22 @@ export function Reader({
           </div>
         </div>
 
-        {/* paging — Next is the page-finish trigger (Engine A, Study only) */}
-        <div className="relative z-10 flex items-center justify-between px-5 py-2">
+        {/* paging — Next is the page-finish trigger (Engine A, Study only).
+            Page number lives in the header now; bottom padding clears the
+            fixed BottomNav rendered by the route. */}
+        <div className="relative z-10 flex items-center justify-center gap-10 px-5 pb-24 pt-2">
           <button
             onClick={goNext}
             disabled={!hasNextPage}
-            className="grid size-9 place-items-center rounded-full bg-white/70 text-forest ring-1 ring-black/5 disabled:opacity-30"
+            className="grid size-9 place-items-center rounded-full bg-card text-foreground ring-1 ring-border disabled:opacity-30"
             aria-label="Next page"
           >
             <ChevronLeft className="size-5" />
           </button>
-          <span className="text-xs text-muted-foreground">{page.page} / 604</span>
           <button
             onClick={goPrevious}
             disabled={!hasPreviousPage}
-            className="grid size-9 place-items-center rounded-full bg-white/70 text-forest ring-1 ring-black/5 disabled:opacity-30"
+            className="grid size-9 place-items-center rounded-full bg-card text-foreground ring-1 ring-border disabled:opacity-30"
             aria-label="Previous page"
           >
             <ChevronRight className="size-5" />

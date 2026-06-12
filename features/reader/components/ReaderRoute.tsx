@@ -33,7 +33,8 @@ export function ReaderRoute({
       hasPreviousPage={pageNumber > 1}
       onNextPage={() => router.push(`/reader/${pageNumber + 1}`)}
       onPreviousPage={() => router.push(`/reader/${pageNumber - 1}`)}
-      onExit={() => router.push("/browse")}
+      onGoToPage={(p) => router.push(`/reader/${p}`)}
+      onExit={() => router.push("/")}
     />
   );
 }
