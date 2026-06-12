@@ -1,13 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { moodForHour, MOOD_THEME, type Mood } from "./lib/timeOfDay";
+import { MOOD_THEME } from "@/features/lib/timeOfDay";
+import { useMood } from "@/features/shell/components/MoodContext";
 import { Sprout } from "./components/Sprout";
 import { GrowthVine } from "./components/GrowthVine";
 import { BottomNav } from "@/features/nav/components/BottomNav";
 import { getTotalReturns } from "@/features/history/store";
 import { readLastPage } from "@/features/reader/lib/lastPage";
+import { getSettings } from "@/features/settings/store";
+import { DEFAULT_SETTINGS, type Settings } from "@/features/settings/lib/types";
+import { buildSessionPlan } from "@/features/session/lib/plan";
+import surahsData from "@/features/corpus/data/surahs.json";
+import openingsData from "@/features/corpus/data/openings.json";
+import type { SurahIndexEntry } from "@/features/corpus/lib/types";
+
+const surahs = surahsData as SurahIndexEntry[];
+const openings = openingsData as Record<string, { arabic: string; meaning: string }>;
+const surahByNumber = new Map(surahs.map((s) => [s.number, s]));
 
 export type WaitingAyah = {
   arabic: string;
@@ -32,27 +43,25 @@ const DEFAULT_AYAH: WaitingAyah = {
 export function GardenHome({
   name = "Rasheed",
   returns: returnsProp,
-  ayah = DEFAULT_AYAH,
+  ayah: ayahProp,
 }: {
   name?: string;
   returns?: number;
   ayah?: WaitingAyah;
 }) {
-  // Start mood-neutral for SSR, resolve to the user's local time after mount
-  // (avoids a server/client hydration mismatch on the clock).
-  const [now, setNow] = useState<{ mood: Mood; weekday: string }>({
-    mood: "midday",
-    weekday: "",
-  });
+  // Mood comes from the app-wide shell (single source of truth). The weekday
+  // is garden-only chrome; resolve it after mount to avoid a clock hydration
+  // mismatch (the shell handles the same for the background wash).
+  const mood = useMood();
+  const [weekday, setWeekday] = useState("");
   const [returns, setReturns] = useState(returnsProp ?? 0);
   const [readerHref, setReaderHref] = useState("/reader/1");
+  // Settings drive the hero ayah and session plan; load after mount (the
+  // server has no localStorage, so SSR renders the neutral default).
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    const d = new Date();
-    setNow({
-      mood: moodForHour(d.getHours()),
-      weekday: d.toLocaleDateString(undefined, { weekday: "long" }),
-    });
+    setWeekday(new Date().toLocaleDateString(undefined, { weekday: "long" }));
   }, []);
 
   useEffect(() => {
@@ -65,18 +74,45 @@ export function GardenHome({
     setReaderHref(`/reader/${readLastPage()}`);
   }, []);
 
-  const theme = MOOD_THEME[now.mood];
+  useEffect(() => {
+    setSettings(getSettings());
+  }, []);
+
+  const theme = MOOD_THEME[mood];
+
+  // The session plan and the hero it implies. The hero is the opening of what
+  // the user is memorizing (else memorized); an explicit `ayah` prop overrides.
+  const plan = useMemo(() => buildSessionPlan(settings, surahs), [settings]);
+  const heroSurahNum = settings.memorizing[0] ?? settings.memorized[0];
+  const derivedAyah: WaitingAyah | null = (() => {
+    if (!heroSurahNum) return null;
+    const opening = openings[String(heroSurahNum)];
+    const meta = surahByNumber.get(heroSurahNum);
+    if (!opening || !meta) return null;
+    return {
+      arabic: opening.arabic,
+      meaning: opening.meaning,
+      surah: meta.name,
+      number: heroSurahNum,
+      minutes: settings.sessionMinutes,
+    };
+  })();
+  const ayah = ayahProp ?? derivedAyah ?? DEFAULT_AYAH;
+
+  // Deep-link the entry cards into the first plan step when there is one,
+  // otherwise resume the last-visited page.
+  const enterBase = plan[0] ? `/reader/${plan[0].page}` : readerHref;
+  const planNames = plan.map((s) => s.name);
+  const hasLists = settings.memorized.length + settings.memorizing.length > 0;
 
   return (
-    <div
-      className={`relative flex min-h-full flex-1 flex-col ${theme.dark ? "dark " : ""}${theme.bg}`}
-    >
+    <div className="relative flex min-h-full flex-1 flex-col">
       <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col px-6 pb-32">
         {/* top: greeting + growth vine */}
         <header className="flex items-start justify-between pt-6">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
-              {now.weekday ? `${now.weekday} · ${theme.label}` : theme.label}
+              {weekday ? `${weekday} · ${theme.label}` : theme.label}
             </p>
             <h1 className="mt-1 text-xl font-semibold text-foreground">
               {theme.greeting(name)}
@@ -108,14 +144,29 @@ export function GardenHome({
           </div>
         </main>
 
+        {/* session hint — what this return will hold (the 5:3:2 plan), or a
+            gentle pointer to set up your sūrahs. Calm, never a nag. */}
+        <div className="mt-6 text-center">
+          {planNames.length > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Today’s path:{" "}
+              <span className="text-foreground">{planNames.join(" · ")}</span>
+            </p>
+          ) : !hasLists ? (
+            <Link href="/settings" className="text-sm text-garden-600 underline-offset-4 hover:underline">
+              Set your sūrahs to shape your sessions
+            </Link>
+          ) : null}
+        </div>
+
         {/* mode pick — the one choice (design-visual §mode selection) */}
-        <div className="mt-8">
+        <div className="mt-6">
           <p className="text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-garden-600">
             Enter as
           </p>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <Link
-              href={`${readerHref}?mode=study`}
+              href={`${enterBase}?mode=study`}
               className="flex flex-col items-start gap-2 rounded-2xl bg-primary px-4 py-3.5 text-left text-primary-foreground shadow-[0_16px_32px_-18px_var(--garden-500)]"
             >
               <span className="grid size-7 place-items-center rounded-full bg-white/20 text-sm font-bold">
@@ -125,7 +176,7 @@ export function GardenHome({
               <span className="text-xs opacity-80">Reads track your words</span>
             </Link>
             <Link
-              href={`${readerHref}?mode=mushaf`}
+              href={`${enterBase}?mode=mushaf`}
               className="flex flex-col items-start gap-2 rounded-2xl bg-card px-4 py-3.5 text-left text-foreground ring-1 ring-border"
             >
               <span className="grid size-7 place-items-center rounded-full bg-secondary text-sm font-bold text-garden-700">

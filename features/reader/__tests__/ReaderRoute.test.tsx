@@ -61,10 +61,10 @@ describe("ReaderRoute", () => {
     expect(mockFinishPage).not.toHaveBeenCalled();
   });
 
-  it("Exit navigates to /browse", () => {
+  it("Done for now returns to the Garden home", () => {
     render(<ReaderRoute page={PAGE} pageNumber={5} />);
-    fireEvent.click(screen.getByLabelText("Exit reader"));
-    expect(mockPush).toHaveBeenCalledWith("/browse");
+    fireEvent.click(screen.getByLabelText("Done for now"));
+    expect(mockPush).toHaveBeenCalledWith("/");
   });
 
   it("disables Next page on the last page", () => {

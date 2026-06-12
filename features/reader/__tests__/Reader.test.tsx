@@ -10,11 +10,39 @@ jest.mock("@/features/review/store", () => ({
   finishPage: jest.fn(),
 }));
 
+jest.mock("@/features/session/components/SessionProvider", () => ({
+  useSession: jest.fn(),
+}));
+
 import { getStatuses, demoteWord, finishPage } from "@/features/review/store";
+import { useSession } from "@/features/session/components/SessionProvider";
+import type { Session } from "@/features/session/lib/types";
 
 const mockGetStatuses = getStatuses as jest.Mock;
 const mockDemoteWord = demoteWord as jest.Mock;
 const mockFinishPage = finishPage as jest.Mock;
+const mockUseSession = useSession as jest.Mock;
+
+// Default session context: no active session. Individual tests override.
+function noSession() {
+  return {
+    session: null,
+    remainingMs: 0,
+    nudge: null,
+    dismissNudge: jest.fn(),
+    advanceStep: jest.fn(),
+    endSession: jest.fn(),
+  };
+}
+
+const ACTIVE_SESSION: Session = {
+  id: "s1",
+  startedAt: 0,
+  durationMs: 300_000,
+  movedIds: [],
+  plan: [],
+  stepIndex: 0,
+};
 
 // "بِسْمِ" appears on both lines (per-form sharing); "بسم" is both its
 // normalized id (features/corpus/lib/normalize.ts) and its Study-mode
@@ -70,6 +98,7 @@ describe("Reader", () => {
     });
 
     mockFinishPage.mockImplementation(() => backing);
+    mockUseSession.mockReturnValue(noSession());
   });
 
   afterEach(() => {
@@ -214,25 +243,60 @@ describe("Reader", () => {
     expect(screen.getByLabelText("Previous page")).toBeDisabled();
   });
 
-  it("Exit button calls onExit and does not mutate status (Study mode)", () => {
+  it("has no top exit/back button (navigation lives at the bottom now)", () => {
+    render(<Reader page={PAGE} />);
+    expect(screen.queryByLabelText("Exit reader")).not.toBeInTheDocument();
+  });
+
+  it("Done for now ends the session and exits without mutating status", () => {
     const onExit = jest.fn();
+    const endSession = jest.fn();
+    mockUseSession.mockReturnValue({ ...noSession(), endSession });
     render(<Reader page={PAGE} onExit={onExit} />);
 
-    fireEvent.click(screen.getByLabelText("Exit reader"));
+    fireEvent.click(screen.getByLabelText("Done for now"));
 
+    expect(endSession).toHaveBeenCalledTimes(1);
     expect(onExit).toHaveBeenCalledTimes(1);
     expect(mockFinishPage).not.toHaveBeenCalled();
     expect(mockDemoteWord).not.toHaveBeenCalled();
   });
 
-  it("Exit button calls onExit and does not mutate status (Mushaf mode)", () => {
-    const onExit = jest.fn();
-    render(<Reader page={PAGE} initialMode="mushaf" onExit={onExit} />);
+  it("shows the session timer bar only while a session is active", () => {
+    const { rerender } = render(<Reader page={PAGE} />);
+    expect(screen.queryByTestId("session-timer")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("Exit reader"));
+    mockUseSession.mockReturnValue({
+      ...noSession(),
+      session: ACTIVE_SESSION,
+      remainingMs: 150_000,
+    });
+    rerender(<Reader page={PAGE} />);
+    expect(screen.getByTestId("session-timer")).toBeInTheDocument();
+  });
 
-    expect(onExit).toHaveBeenCalledTimes(1);
-    expect(mockFinishPage).not.toHaveBeenCalled();
-    expect(mockDemoteWord).not.toHaveBeenCalled();
+  it("a step nudge advances the session and opens that sūrah's page", () => {
+    const advanceStep = jest.fn();
+    const onGoToPage = jest.fn();
+    const step = {
+      category: "memorized" as const,
+      surah: 67,
+      page: 562,
+      name: "Al-Mulk",
+      weight: 5,
+    };
+    mockUseSession.mockReturnValue({
+      ...noSession(),
+      session: { ...ACTIVE_SESSION, plan: [step] },
+      nudge: { kind: "step", step },
+      advanceStep,
+    });
+    render(<Reader page={PAGE} onGoToPage={onGoToPage} />);
+
+    expect(screen.getByTestId("session-nudge")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Go" }));
+
+    expect(advanceStep).toHaveBeenCalledTimes(1);
+    expect(onGoToPage).toHaveBeenCalledWith(562);
   });
 });
