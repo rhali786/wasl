@@ -1,15 +1,27 @@
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
-import { SessionProvider, useSession } from "../components/SessionProvider";
+import {
+  SessionProvider,
+  useSession,
+  INTRO_FADE_IN_MS,
+  INTRO_FADE_OUT_MS,
+  INTRO_HOLD_MS,
+  INTRO_MS,
+  SUMMARY_MS,
+} from "../components/SessionProvider";
 
 jest.mock("@/features/lib/logger", () => ({
   logger: { warn: jest.fn(), error: jest.fn() },
 }));
 
-// Controllable pathname for the start/end-on-route lifecycle.
 let mockPath = "/reader/5";
+let mockMode: string | null = "study";
+
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPath,
+  useSearchParams: () => ({
+    get: (key: string) => (key === "mode" ? mockMode : null),
+  }),
 }));
 
 function Probe() {
@@ -35,7 +47,7 @@ describe("SessionProvider", () => {
   beforeEach(() => {
     window.localStorage.clear();
     mockPath = "/reader/5";
-    window.history.pushState({}, "", "/reader/5?mode=study");
+    mockMode = "study";
   });
 
   it("starts a session on a deliberate Study entry (?mode=study)", () => {
@@ -44,44 +56,57 @@ describe("SessionProvider", () => {
   });
 
   it("does not start a session for a free read (no ?mode=study)", () => {
-    window.history.pushState({}, "", "/reader/5");
+    mockMode = null;
     renderProvider();
     expect(screen.getByTestId("active").textContent).toBe("no");
   });
 
   it("does not start a session entering Mushaf (?mode=mushaf)", () => {
-    window.history.pushState({}, "", "/reader/5?mode=mushaf");
+    mockMode = "mushaf";
     renderProvider();
     expect(screen.getByTestId("active").textContent).toBe("no");
   });
 
-  it("shows a brief intro when a session starts, then dismisses itself", () => {
-    jest.useFakeTimers();
-    try {
-      renderProvider();
-      expect(screen.getByTestId("session-intro")).toBeInTheDocument();
-      act(() => {
-        jest.advanceTimersByTime(1500);
-      });
-      expect(screen.queryByTestId("session-intro")).not.toBeInTheDocument();
-    } finally {
-      jest.useRealTimers();
-    }
+  it("starts a session and shows intro when ?mode=study arrives while already in the reader", () => {
+    mockMode = null;
+    const { rerender } = renderProvider();
+    expect(screen.getByTestId("active").textContent).toBe("no");
+
+    mockMode = "study";
+    rerender(
+      <SessionProvider>
+        <Probe />
+      </SessionProvider>
+    );
+
+    expect(screen.getByTestId("active").textContent).toBe("yes");
+    expect(screen.getByTestId("session-intro")).toBeInTheDocument();
   });
 
-  it("shows the intro overlay, then fades it out over its 1500ms duration", () => {
+  it("shows intro that fades in, holds, then fades out", () => {
     jest.useFakeTimers();
     try {
       renderProvider();
       const intro = screen.getByTestId("session-intro");
-      expect(intro.className).toContain("opacity-100");
-      expect(intro.className).toContain("duration-[1500ms]");
+      expect(intro.className).toContain("opacity-0");
+
       act(() => {
         jest.advanceTimersByTime(0);
       });
-      expect(screen.getByTestId("session-intro").className).toContain("opacity-0");
+      expect(screen.getByTestId("session-intro").className).toContain("opacity-100");
+
       act(() => {
-        jest.advanceTimersByTime(1500);
+        jest.advanceTimersByTime(INTRO_FADE_IN_MS + INTRO_HOLD_MS - 1);
+      });
+      expect(screen.getByTestId("session-intro").className).toContain("opacity-100");
+
+      act(() => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(screen.getByTestId("session-intro").className).toContain("opacity-0");
+
+      act(() => {
+        jest.advanceTimersByTime(INTRO_FADE_OUT_MS);
       });
       expect(screen.queryByTestId("session-intro")).not.toBeInTheDocument();
     } finally {
@@ -90,18 +115,18 @@ describe("SessionProvider", () => {
   });
 
   it("does not show an intro for a free read (no ?mode=study)", () => {
-    window.history.pushState({}, "", "/reader/5");
+    mockMode = null;
     renderProvider();
     expect(screen.queryByTestId("session-intro")).not.toBeInTheDocument();
   });
 
-  it("shows a brief summary when leaving the reader ends a session, then dismisses itself", () => {
+  it("shows a summary when leaving the reader ends a session, then dismisses itself", () => {
     jest.useFakeTimers();
     try {
       const { rerender } = renderProvider();
       expect(screen.getByTestId("active").textContent).toBe("yes");
       act(() => {
-        jest.advanceTimersByTime(1500); // clear the intro first
+        jest.advanceTimersByTime(INTRO_MS);
       });
 
       mockPath = "/browse";
@@ -113,7 +138,7 @@ describe("SessionProvider", () => {
 
       expect(screen.getByTestId("session-summary")).toBeInTheDocument();
       act(() => {
-        jest.advanceTimersByTime(1800);
+        jest.advanceTimersByTime(SUMMARY_MS);
       });
       expect(screen.queryByTestId("session-summary")).not.toBeInTheDocument();
     } finally {
@@ -154,7 +179,6 @@ describe("SessionProvider", () => {
     jest.useFakeTimers();
     try {
       renderProvider();
-      // Default 5-minute session.
       expect(Number(screen.getByTestId("remaining").textContent)).toBe(300_000);
       act(() => {
         jest.advanceTimersByTime(60_000);
@@ -165,8 +189,8 @@ describe("SessionProvider", () => {
     }
   });
 
-  it("startStudySession begins a session when none is active", () => {
-    window.history.pushState({}, "", "/reader/5");
+  it("startStudySession begins a session and shows the intro", () => {
+    mockMode = null;
     function Starter() {
       const { startStudySession, session } = useSession();
       return (
@@ -188,6 +212,7 @@ describe("SessionProvider", () => {
       screen.getByRole("button", { name: "Start" }).click();
     });
     expect(screen.getByTestId("active").textContent).toBe("yes");
+    expect(screen.getByTestId("session-intro")).toBeInTheDocument();
   });
 
   it("nudges the user when the session time elapses", () => {

@@ -155,9 +155,12 @@ under `features/<feature>/`.
   Initialize mode from localStorage on mount — never default to Study and then
   snap to Mushaf on page turns.
 - **Sessions start on Study entry:** Home Study card (`?mode=study`), bottom-nav
-  Reader tab (`?mode=study`), and switching the slider to Study all call
-  `startStudySession()`. Switching to Mushaf ends the active session silently
-  (no summary overlay). Leaving `/reader/*` ends with the summary overlay.
+  Reader tab (`?mode=study`), and switching the slider to Study all start a
+  session and show the intro overlay. `SessionProvider` watches pathname **and**
+  `?mode=study` so the intro also fires mid-read (e.g. nav Reader tab while
+  already in the reader). Switching to Mushaf ends the active session silently.
+  Leaving `/reader/*` ends with the summary overlay. Intro/summary: fade in
+  (~700ms), hold (~4.5s), fade out (~1.8–2s).
 - **Page metadata:** sūrah, juz, and page number sit **between** the bottom
   paging arrows — not in the top header.
 - **Promotion whisper:** when Engine A promotes word-forms on page finish, show

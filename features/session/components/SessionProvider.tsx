@@ -2,13 +2,14 @@
 
 import {
   createContext,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import surahsData from "@/features/corpus/data/surahs.json";
 import type { SurahIndexEntry } from "@/features/corpus/lib/types";
 import { getSettings } from "@/features/settings/store";
@@ -23,14 +24,21 @@ import {
 
 const surahs = surahsData as SurahIndexEntry[];
 
-// Brief, calm transitions that bookend a session (design-voice.md tone) —
-// auto-dismiss on their own, mirroring each other.
 const INTRO_MESSAGE =
   "Your session is starting now. May Allah accept it, and make it heavy on your scales.";
 const SUMMARY_MESSAGE =
   "Your session has ended. May Allah accept it, and make it heavy on your scales.";
-const INTRO_MS = 1500;
-const SUMMARY_MS = 1800;
+
+// Intro/summary overlays: fade in → hold (readable) → fade out.
+export const INTRO_FADE_IN_MS = 700;
+export const INTRO_HOLD_MS = 4500;
+export const INTRO_FADE_OUT_MS = 1800;
+export const INTRO_MS = INTRO_FADE_IN_MS + INTRO_HOLD_MS + INTRO_FADE_OUT_MS;
+
+export const SUMMARY_FADE_IN_MS = 700;
+export const SUMMARY_HOLD_MS = 4500;
+export const SUMMARY_FADE_OUT_MS = 2000;
+export const SUMMARY_MS = SUMMARY_FADE_IN_MS + SUMMARY_HOLD_MS + SUMMARY_FADE_OUT_MS;
 
 export type SessionNudge =
   | { kind: "step"; step: SessionStep }
@@ -40,15 +48,11 @@ export type SessionPhase = "intro" | "summary" | null;
 
 interface SessionContextValue {
   session: Session | null;
-  /** ms left in the planned session (0 once elapsed). */
   remainingMs: number;
   nudge: SessionNudge | null;
   dismissNudge: () => void;
-  /** Advance to the next plan step; returns the step to navigate to (or null). */
   advanceStep: () => SessionStep | null;
-  /** Begin a Study session if none is active (slider, nav, home entry). */
   startStudySession: () => void;
-  /** End the session now. Summary overlay only when leaving the reader. */
   endSession: (opts?: { summary?: boolean }) => void;
 }
 
@@ -72,33 +76,46 @@ function beginStudySession(): Session {
   return storeStartSession(plan, settings.sessionMinutes * 60_000);
 }
 
-// Owns the session lifecycle: a session = time spent in the reader. It starts
-// on entering /reader/*, ends on leaving (nav to a hub) or backgrounding, and
-// drives the timer + step nudges. Mounted once in app/layout.tsx.
-export function SessionProvider({ children }: { children: React.ReactNode }) {
+function phaseTiming(phase: SessionPhase) {
+  if (phase === "intro") {
+    return {
+      fadeIn: INTRO_FADE_IN_MS,
+      hold: INTRO_HOLD_MS,
+      fadeOut: INTRO_FADE_OUT_MS,
+      total: INTRO_MS,
+    };
+  }
+  return {
+    fadeIn: SUMMARY_FADE_IN_MS,
+    hold: SUMMARY_HOLD_MS,
+    fadeOut: SUMMARY_FADE_OUT_MS,
+    total: SUMMARY_MS,
+  };
+}
+
+function SessionProviderInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const inReader = !!pathname && pathname.startsWith("/reader");
+  const wantsStudy = searchParams.get("mode") === "study";
 
   const [session, setSession] = useState<Session | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const [nudge, setNudge] = useState<SessionNudge | null>(null);
   const [phase, setPhase] = useState<SessionPhase>(null);
-  const [fading, setFading] = useState(false);
+  const [phaseVisible, setPhaseVisible] = useState(false);
+  const [phaseLeaving, setPhaseLeaving] = useState(false);
   const firedRef = useRef<Set<string>>(new Set());
 
-  // Start on reader entry; end on leave. Reader-to-reader navigation keeps
-  // `inReader` true, so the session (and its movedIds) persists across pages.
-  // A session (timer/plan/nudges) only begins on a deliberate "Enter as
-  // Study" — from Home's Study card, or the bottom-nav Reader tab
-  // (both append ?mode=study). Mushaf and Browse→open are free reads with no
-  // session chrome. Tab/focus loss never ends a session; only navigating away
-  // from /reader does.
+  // Start on any deliberate Study entry — home card, nav Reader tab, or
+  // ?mode=study while already in the reader. Re-run when pathname or query
+  // changes so the bottom-nav Reader tab works mid-read.
   useEffect(() => {
     if (inReader) {
       const existing = storeGetSession();
       if (existing) {
         setSession(existing);
-      } else if (new URLSearchParams(window.location.search).get("mode") === "study") {
+      } else if (wantsStudy) {
         setSession(beginStudySession());
         setPhase("intro");
       } else {
@@ -112,36 +129,33 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setNudge(null);
     }
-  }, [inReader]);
+  }, [inReader, pathname, wantsStudy]);
 
-  // Each phase appears, then fades out over its full duration (see
-  // INTRO_MS/SUMMARY_MS) before unmounting.
   useEffect(() => {
     if (!phase) return;
-    setFading(false);
-    const ms = phase === "intro" ? INTRO_MS : SUMMARY_MS;
-    const fadeTimer = setTimeout(() => setFading(true), 0);
-    const dismissTimer = setTimeout(() => setPhase(null), ms);
+    const { fadeIn, hold, fadeOut, total } = phaseTiming(phase);
+    setPhaseLeaving(false);
+    setPhaseVisible(false);
+    const showTimer = setTimeout(() => setPhaseVisible(true), 0);
+    const fadeOutTimer = setTimeout(() => setPhaseLeaving(true), fadeIn + hold);
+    const dismissTimer = setTimeout(() => setPhase(null), total);
     return () => {
-      clearTimeout(fadeTimer);
+      clearTimeout(showTimer);
+      clearTimeout(fadeOutTimer);
       clearTimeout(dismissTimer);
     };
   }, [phase]);
 
-  // 1s heartbeat drives the timer bar while a session is active.
   useEffect(() => {
     if (!session) return;
     const interval = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(interval);
   }, [session?.id]);
 
-  // Reset the one-shot nudge tracking when a new session begins.
   useEffect(() => {
     firedRef.current = new Set();
   }, [session?.id]);
 
-  // Fire step-boundary nudges (5:3:2 budgets) and the final "time's up" nudge,
-  // each at most once per session.
   useEffect(() => {
     if (!session) return;
     const elapsed = nowTick - session.startedAt;
@@ -195,6 +209,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setNudge(null);
   }, []);
 
+  const overlayTiming = phase ? phaseTiming(phase) : null;
+
   return (
     <SessionContext.Provider
       value={{
@@ -208,12 +224,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      {phase ? (
+      {phase && overlayTiming ? (
         <div
           data-testid={phase === "intro" ? "session-intro" : "session-summary"}
-          className={`pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/90 px-10 text-center backdrop-blur-sm transition-opacity ${
-            phase === "intro" ? "duration-[1500ms]" : "duration-[1800ms]"
-          } ${fading ? "opacity-0" : "opacity-100"}`}
+          className={`pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/90 px-10 text-center backdrop-blur-sm transition-opacity ease-in-out ${
+            phaseLeaving || !phaseVisible ? "opacity-0" : "opacity-100"
+          }`}
+          style={{
+            transitionDuration: phaseLeaving
+              ? `${overlayTiming.fadeOut}ms`
+              : `${overlayTiming.fadeIn}ms`,
+          }}
         >
           <p className="font-display text-lg italic leading-relaxed text-foreground">
             {phase === "intro" ? INTRO_MESSAGE : SUMMARY_MESSAGE}
@@ -221,5 +242,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
     </SessionContext.Provider>
+  );
+}
+
+export function SessionProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <SessionProviderInner>{children}</SessionProviderInner>
+    </Suspense>
   );
 }
