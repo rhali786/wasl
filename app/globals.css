@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-sans);
+  --font-arabic: var(--font-arabic);
+  --font-display: var(--font-display);
+
+  /* Garden green ramp — exposed as Tailwind utilities: bg-garden-500, text-garden-700, … */
+  --color-garden-50: var(--garden-50);
+  --color-garden-100: var(--garden-100);
+  --color-garden-200: var(--garden-200);
+  --color-garden-300: var(--garden-300);
+  --color-garden-400: var(--garden-400);
+  --color-garden-500: var(--garden-500);
+  --color-garden-600: var(--garden-600);
+  --color-garden-700: var(--garden-700);
+  --color-garden-800: var(--garden-800);
+  --color-garden-900: var(--garden-900);
+  --color-garden-950: var(--garden-950);
+  --color-sand-100: var(--sand-100);
+  --color-sand-200: var(--sand-200);
+  --color-sand-300: var(--sand-300);
+  --color-sand-700: var(--sand-700);
+  --color-sand-800: var(--sand-800);
+  --color-forest: var(--forest-ink);
+  --color-mist: var(--mist);
+  --color-gold: var(--accent-gold);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Garden ramp — source of truth (tuned to the preview images' fresh greens) */
+  --garden-50:  #f1f9f0;
+  --garden-100: #e2f3e1;
+  --garden-200: #c5e8c4;
+  --garden-300: #9fd9a0;
+  --garden-400: #6fc77e;
+  --garden-500: #3fbf68;
+  --garden-600: #27a257;
+  --garden-700: #1c7d46;
+  --garden-800: #185f39;
+  --garden-900: #123f28;
+  --garden-950: #0a2719;
+
+  --sand-100: #f7f0df;
+  --sand-200: #efe2c4;
+  --sand-300: #e4d3a8;
+  --sand-700: #927542;
+  --sand-800: #6f5832;
+
+  --forest-ink: #143124;
+  --mist: #eef6ec;
+  --accent-gold: #c9a24b;
+
+  /* shadcn semantic tokens mapped to the Garden palette */
+  --background: #ffffff;
+  --foreground: var(--forest-ink);
+  --card: #ffffff;
+  --card-foreground: var(--forest-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--forest-ink);
+  --primary: #27a257;
+  --primary-foreground: #ffffff;
+  --secondary: var(--garden-100);
+  --secondary-foreground: var(--garden-800);
+  --muted: #f2f6f0;
+  --muted-foreground: #5a7055;
+  --accent: var(--garden-100);
+  --accent-foreground: var(--garden-800);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #e4ece0;
+  --input: #e4ece0;
+  --ring: var(--garden-400);
+  --chart-1: var(--garden-300);
+  --chart-2: var(--garden-400);
+  --chart-3: var(--garden-500);
+  --chart-4: var(--garden-600);
+  --chart-5: var(--garden-700);
+  --sidebar: var(--mist);
+  --sidebar-foreground: var(--forest-ink);
+  --sidebar-primary: var(--garden-600);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--garden-100);
+  --sidebar-accent-foreground: var(--garden-800);
+  --sidebar-border: #e4ece0;
+  --sidebar-ring: var(--garden-400);
+}
+
+.dark {
+  /* Garden at night — deep forest, glowing accents */
+  --background: #07150d;
+  --foreground: #dbeede;
+  --card: #0c2016;
+  --card-foreground: #dbeede;
+  --popover: #0c2016;
+  --popover-foreground: #dbeede;
+  --primary: #43d17c;
+  --primary-foreground: #06140d;
+  --secondary: #143524;
+  --secondary-foreground: #cfe9d3;
+  --muted: #122a1c;
+  --muted-foreground: #8fb89a;
+  --accent: #14361f;
+  --accent-foreground: #d3efd7;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: rgba(120, 200, 150, 0.14);
+  --input: rgba(120, 200, 150, 0.18);
+  --ring: #43d17c;
+  --chart-1: var(--garden-200);
+  --chart-2: var(--garden-300);
+  --chart-3: var(--garden-400);
+  --chart-4: var(--garden-500);
+  --chart-5: var(--garden-600);
+  --sidebar: #0a1c12;
+  --sidebar-foreground: #dbeede;
+  --sidebar-primary: #43d17c;
+  --sidebar-primary-foreground: #06140d;
+  --sidebar-accent: #14361f;
+  --sidebar-accent-foreground: #d3efd7;
+  --sidebar-border: rgba(120, 200, 150, 0.14);
+  --sidebar-ring: #43d17c;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ── Garden motion — "one breath" (design-visual.md §motion) ───────────── */
+@keyframes wird-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.025); }
+}
+@keyframes wird-sway {
+  0%, 100% { transform: rotate(-1deg); }
+  50%      { transform: rotate(1deg); }
+}
+@keyframes wird-twinkle {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 1; }
+}
+@keyframes wird-rise {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.wird-breathe { animation: wird-breathe 6s ease-in-out infinite; transform-origin: 50% 92%; }
+.wird-sway    { animation: wird-sway 7s ease-in-out infinite; transform-origin: 50% 100%; }
+.wird-twinkle { animation: wird-twinkle 4s ease-in-out infinite; }
+.wird-rise    { animation: wird-rise 0.5s cubic-bezier(0.22, 1, 0.28, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wird-breathe, .wird-sway, .wird-twinkle, .wird-rise { animation: none !important; }
+}

@@ -1,0 +1,10 @@
+{
+  "ignore": [".next", ".git", "node_modules", ".turbo", "dist", "build"],
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",
+      "Bash(npx jest *)",
+      "Bash(npx tsc --noEmit*)"
+    ]
+  }
+}

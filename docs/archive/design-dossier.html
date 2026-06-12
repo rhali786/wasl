@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Design Dossier · Qur'an Review Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14110B; --bg-raise:#1C1710; --bg-soft:#221B12;
+    --ink:#F1E8D6; --ink-soft:#B6A88C; --ink-dim:#7C6F57;
+    --gold:#C9A24B; --gold-bright:#E7C878;
+    --leaf:#6FA07E; --leaf-deep:#3F7A52;
+    --hair:rgba(241,232,214,0.09);
+    --maxw:880px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,sans-serif;
+    line-height:1.65;font-size:16px;
+    background-image:radial-gradient(120% 50% at 50% -5%, rgba(201,162,75,.06), transparent 55%);
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;}
+
+  /* ---- cover ---- */
+  .cover{min-height:92vh;display:flex;flex-direction:column;justify-content:center;padding:80px 0 60px;border-bottom:1px solid var(--hair);}
+  .eyebrow{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold);margin-bottom:26px;}
+  .cover .bism{font-family:"Amiri Quran",serif;font-size:1.6rem;color:var(--gold-bright);direction:rtl;opacity:.8;margin-bottom:30px;}
+  h1{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:clamp(2.6rem,7vw,4.4rem);line-height:1.02;margin:0 0 18px;letter-spacing:-.01em;}
+  h1 .sub{display:block;color:var(--ink-soft);font-style:italic;font-weight:500;font-size:.42em;margin-top:14px;}
+  .core-line{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:clamp(1.3rem,3.4vw,1.9rem);color:var(--ink);max-width:620px;margin:30px 0 0;border-left:2px solid var(--gold);padding-left:22px;}
+  .meta{margin-top:50px;display:flex;flex-wrap:wrap;gap:28px;font-size:12.5px;letter-spacing:.06em;color:var(--ink-dim);text-transform:uppercase;}
+  .meta b{color:var(--ink-soft);font-weight:500;}
+  .taglines{margin-top:26px;font-size:14px;color:var(--ink-soft);}
+  .taglines span{color:var(--gold);}
+
+  /* ---- section scaffolding ---- */
+  section{padding:66px 0;border-bottom:1px solid var(--hair);}
+  .num{font-family:"Cormorant Garamond",serif;font-size:1rem;color:var(--gold);letter-spacing:.2em;display:block;margin-bottom:10px;}
+  h2{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:clamp(1.8rem,4.5vw,2.7rem);line-height:1.08;margin:0 0 8px;}
+  .lede{color:var(--ink-soft);font-size:1.08rem;max-width:640px;margin:0 0 30px;}
+  h3{font-family:"Hanken Grotesk";font-weight:600;font-size:1.02rem;letter-spacing:.02em;margin:30px 0 8px;color:var(--ink);}
+  p{margin:0 0 16px;color:var(--ink);}
+  p.soft{color:var(--ink-soft);}
+  a{color:var(--gold);}
+  .kicker{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--leaf);margin-bottom:18px;}
+
+  /* ---- cards / grid ---- */
+  .grid{display:grid;gap:16px;}
+  .g2{grid-template-columns:1fr 1fr;}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .card{background:var(--bg-raise);border:1px solid var(--hair);border-radius:14px;padding:20px 22px;}
+  .card h4{font-family:"Hanken Grotesk";font-size:.95rem;font-weight:600;margin:0 0 6px;color:var(--gold-bright);}
+  .card p{font-size:.92rem;color:var(--ink-soft);margin:0;}
+  .why{font-size:.9rem;color:var(--ink-soft);border-left:2px solid var(--leaf-deep);padding-left:14px;margin:8px 0 0;font-style:italic;}
+
+  /* ---- decisions table ---- */
+  .rows{border-top:1px solid var(--hair);margin-top:8px;}
+  .row{display:grid;grid-template-columns:200px 1fr;gap:18px;padding:16px 0;border-bottom:1px solid var(--hair);align-items:start;}
+  .row .k{font-weight:600;color:var(--ink);font-size:.95rem;}
+  .row .v{color:var(--ink-soft);font-size:.95rem;}
+  .row .v b{color:var(--gold-bright);font-weight:600;}
+
+  /* ---- status ladder ---- */
+  .ladder{display:flex;flex-direction:column;gap:0;margin:18px 0 6px;border:1px solid var(--hair);border-radius:14px;overflow:hidden;}
+  .rung{display:grid;grid-template-columns:38px 130px 1fr;gap:16px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--hair);}
+  .rung:last-child{border-bottom:none;}
+  .rung .lv{font-family:"Cormorant Garamond";font-size:1.4rem;color:var(--gold);text-align:center;}
+  .rung .nm{font-weight:600;font-size:.95rem;}
+  .rung .hw{font-size:.88rem;color:var(--ink-soft);}
+  .rung.cap{background:rgba(111,160,126,.08);}
+  .rung.cap .hw{color:var(--leaf);}
+
+  /* ---- swatches ---- */
+  .palette{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;}
+  .chip{border-radius:10px;padding:14px 14px 12px;width:120px;border:1px solid var(--hair);}
+  .chip .sw{height:34px;border-radius:7px;margin-bottom:9px;border:1px solid rgba(0,0,0,.2);}
+  .chip .nm{font-size:.78rem;font-weight:600;}
+  .chip .hex{font-size:.7rem;color:var(--ink-dim);letter-spacing:.04em;}
+
+  /* ---- type specimens ---- */
+  .spec{background:var(--bg-raise);border:1px solid var(--hair);border-radius:14px;padding:24px;margin:14px 0;}
+  .spec .lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+  .sp-amiri{font-family:"Amiri Quran",serif;font-size:2rem;direction:rtl;line-height:1.9;}
+  .sp-corm{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.5rem;color:var(--ink);}
+  .sp-hank{font-family:"Hanken Grotesk";font-size:1rem;color:var(--ink-soft);}
+
+  /* ---- two rooms specimens ---- */
+  .rooms{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;}
+  .room{border-radius:16px;overflow:hidden;border:1px solid var(--hair);min-height:300px;position:relative;display:flex;flex-direction:column;}
+  .room .tag{position:absolute;top:14px;left:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;z-index:5;}
+  /* garden */
+  .garden{background:
+      radial-gradient(120% 70% at 50% 8%, #F4F0DF 0%, rgba(244,240,223,0) 46%),
+      radial-gradient(140% 90% at 50% 30%, #DCE8D2 0%, #C7DAC5 52%, #B6CCB4 100%);}
+  .garden .tag{color:#3F7A52;}
+  .garden .greet{font-family:"Amiri Quran",serif;color:#1E3A2C;font-size:1.1rem;direction:rtl;text-align:center;margin-top:40px;}
+  .tree-wrap{flex:1;display:flex;align-items:center;justify-content:center;}
+  .sway{transform-origin:140px 286px;animation:sway 6.2s ease-in-out infinite;}
+  .canopy-sway{transform-origin:140px 200px;animation:sway 6.2s ease-in-out infinite;}
+  @keyframes sway{0%,100%{transform:rotate(-1.3deg);}50%{transform:rotate(1.3deg);}}
+  /* study */
+  .study{background:radial-gradient(120% 60% at 50% -10%, rgba(201,162,75,.06), transparent 60%), #15110B;display:flex;flex-direction:column;justify-content:center;padding:30px 26px;}
+  .study .tag{color:var(--gold);}
+  .study .ayah{font-family:"Amiri Quran",serif;direction:rtl;text-align:center;font-size:1.9rem;line-height:2.4;color:var(--ink);}
+  .study .w{padding:.04em .16em;border-radius:.5em;}
+  .study .u0{background:rgba(201,140,60,.17);border-bottom:1.5px dotted rgba(201,140,60,.55);color:#D8C9AE;}
+  .study .u2{background:rgba(201,140,60,.075);color:#E2D6BD;}
+  .study .k{color:var(--ink);text-shadow:0 0 18px rgba(241,232,214,.22);animation:glow 5s ease-in-out infinite;}
+  @keyframes glow{0%,100%{text-shadow:0 0 12px rgba(241,232,214,.12);}50%{text-shadow:0 0 22px rgba(241,232,214,.30);}}
+  .study .revl{margin-top:24px;background:var(--bg-raise);border:1px solid var(--hair);border-radius:14px;padding:14px;text-align:center;}
+  .study .revl .rw{font-family:"Amiri Quran",serif;font-size:1.6rem;}
+  .study .revl .rm{font-family:"Cormorant Garamond",serif;font-style:italic;color:var(--ink-soft);font-size:1.1rem;}
+
+  /* ---- took/left ---- */
+  .tl{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--hair);border-radius:14px;overflow:hidden;}
+  .tl .h{padding:12px 18px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;border-bottom:1px solid var(--hair);}
+  .tl .take{color:var(--leaf);} .tl .leave{color:#C98B6B;border-left:1px solid var(--hair);}
+  .tl .cell{padding:14px 18px;font-size:.92rem;color:var(--ink-soft);border-bottom:1px solid var(--hair);}
+  .tl .cell.r{border-left:1px solid var(--hair);}
+  .tl .src{color:var(--gold-bright);font-weight:600;display:block;margin-bottom:3px;font-size:.84rem;letter-spacing:.04em;}
+
+  /* lists */
+  ul.clean{list-style:none;padding:0;margin:10px 0;}
+  ul.clean li{padding:10px 0 10px 26px;position:relative;border-bottom:1px solid var(--hair);color:var(--ink-soft);font-size:.95rem;}
+  ul.clean li::before{content:"❧";position:absolute;left:0;color:var(--gold);}
+  ul.clean li b{color:var(--ink);font-weight:600;}
+
+  .delta li::before{content:"→";color:var(--leaf);}
+
+  footer{padding:70px 0 90px;text-align:center;}
+  footer .fin{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.7rem;color:var(--ink);}
+  footer .fin span{color:var(--gold);}
+  footer .sig{margin-top:18px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim);}
+
+  @media (max-width:720px){
+    .g2,.g3,.rooms,.tl{grid-template-columns:1fr;}
+    .row{grid-template-columns:1fr;gap:4px;}
+    .rung{grid-template-columns:30px 1fr;}
+    .rung .hw{grid-column:1 / -1;}
+    .tl .cell.r,.tl .leave{border-left:none;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .sway,.canopy-sway,.study .k{animation:none;}
+    html{scroll-behavior:auto;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="wrap">
+  <div class="cover">
+    <div class="eyebrow">Design Dossier · Internal</div>
+    <div class="bism">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+    <h1>Qur'an Review Companion
+      <span class="sub">working title — also: Current · Wird Review · Known Qur'an</span>
+    </h1>
+    <div class="core-line">"Show me where I am right now, and what deserves my next five minutes."</div>
+    <div class="taglines">Taglines in play: <span>A Qur'an review app for the next five minutes.</span> &nbsp;·&nbsp; <span>Not more content. Better return.</span></div>
+    <div class="meta">
+      <div><b>Platform</b><br>iPhone, mobile-first</div>
+      <div><b>For</b><br>Intermediate Qur'an learners</div>
+      <div><b>Posture</b><br>Review, not content</div>
+      <div><b>Status</b><br>Design locked · pre-build</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 01 THESIS ================= -->
+<section><div class="wrap">
+  <span class="num">01 — Thesis</span>
+  <h2>A training log for the Qur'an, not another place to read it.</h2>
+  <p class="lede">The user already reads Arabic, has memorized surahs, and recognizes many words. They don't need more content. They need a beautiful system to review what they're already carrying — and to know, in any spare five minutes, exactly where to put their attention.</p>
+  <div class="grid g2">
+    <div class="card"><h4>What it is</h4><p>A calm, current review companion. Repeated short sessions. Honest word-familiarity tracking. One clear answer to "what now?"</p></div>
+    <div class="card"><h4>What it is not</h4><p>Not a beginner Arabic course, not a tafsir app, not a full mushaf, not a gamified language platform, not a flashcard deck.</p></div>
+  </div>
+  <p class="why">Opinion: the original PRD's strongest line is the one to build the whole product around — <b>the metric serves the Qur'an, not the other way around.</b> Every decision below is downstream of that.</p>
+</div></section>
+
+<!-- ================= 02 THE USER & PROBLEM ================= -->
+<section><div class="wrap">
+  <span class="num">02 — User &amp; Problem</span>
+  <h2>The problem isn't access. It's direction.</h2>
+  <p class="lede">Existing tools optimize for reading, for teaching beginners, or for exposing learners to volume. None answers the intermediate reviewer's real question: of everything I already half-know, what deserves attention now?</p>
+  <div class="grid g3">
+    <div class="card"><h4>Reads Arabic</h4><p>Script is not a barrier. Recognition of letters is not the friction point.</p></div>
+    <div class="card"><h4>Has ḥifẓ</h4><p>Memorized surahs exist and matter most — yet most tools ignore them.</p></div>
+    <div class="card"><h4>Wants honesty</h4><p>Tired of inflated streaks and vanity counts. Wants progress that's true.</p></div>
+  </div>
+</div></section>
+
+<!-- ================= 03 PHILOSOPHY ================= -->
+<section><div class="wrap">
+  <span class="num">03 — Philosophy</span>
+  <h2>Calm, current, and quietly honest.</h2>
+  <ul class="clean">
+    <li><b>Review over exposure.</b> The home answers one question and starts in a single tap.</li>
+    <li><b>Return over streaks.</b> Coming back is celebrated; the missed hour is never punished.</li>
+    <li><b>Honesty by construction.</b> Metrics move from real behaviour, not from buttons pressed for show.</li>
+    <li><b>Intrinsic, not extrinsic.</b> The reward is the thing itself becoming clearer — never points bolted on top.</li>
+    <li><b>Sakinah on return.</b> Opening the app should feel like settling, not like clocking in.</li>
+  </ul>
+</div></section>
+
+<!-- ================= 04 DECISIONS ================= -->
+<section><div class="wrap">
+  <span class="num">04 — Decisions Locked</span>
+  <h2>What we settled.</h2>
+  <p class="lede">The choices made through this design process, with the reasoning that drove each.</p>
+  <div class="rows">
+    <div class="row"><div class="k">Platform</div><div class="v"><b>iPhone, mobile-first.</b> Five-minute sessions between meetings and after ṣalāh are phone behaviour. The app decides everything it can so the user never has to think.</div></div>
+    <div class="row"><div class="k">Architecture</div><div class="v"><b>Local-first. No backend for v1.</b> The Qur'an is a fixed corpus of ~77,400 words / 6,236 ayāt — a few MB of JSON that never changes, for one user. No server, no auth, no API.</div></div>
+    <div class="row"><div class="k">LingQ import</div><div class="v"><b>A one-time migration script, not a product feature.</b> You import your vocabulary seed once; it should never become an in-app pipeline. (Verify the API version — v3 vs v2 — and capture <code>extended_status</code> so "known" words aren't collapsed.)</div></div>
+    <div class="row"><div class="k">Qur'an text</div><div class="v"><b>Tanzil</b> — the verified standard. Uthmani for display, simple/imlaai available for matching.</div></div>
+    <div class="row"><div class="k">Word meanings</div><div class="v"><b>A word-by-word gloss dataset, not the Quranic Arabic Corpus.</b> The Corpus is morphology-focused, frozen, and GPL-licensed — avoid it. Roots are out of MVP scope anyway.</div></div>
+    <div class="row"><div class="k">Word identity</div><div class="v"><b>Store both forms.</b> Diacritized for display; a normalized key (tashkīl stripped, alif/hamza/yā' unified) for matching and status.</div></div>
+    <div class="row"><div class="k">Meanings</div><div class="v"><b>Hidden by default.</b> Revealing a meaning is itself the signal that you didn't know it.</div></div>
+    <div class="row"><div class="k">Session</div><div class="v"><b>Whenever the app is in focus.</b> Background → session ends. Return → new session.</div></div>
+    <div class="row"><div class="k">Onboarding</div><div class="v"><b>Three answers.</b> Pick your memorized surahs → pick what you're currently memorizing → Long Hike is the 10 longest surahs by a predefined list. Done.</div></div>
+    <div class="row"><div class="k">Visual system</div><div class="v"><b>Two rooms.</b> A calm green garden (home) and a warm dark study (reader), joined by a single gold thread of light.</div></div>
+  </div>
+
+  <h3>How this evolved from the original PRD</h3>
+  <ul class="clean delta">
+    <li>The PRD's "MVP" was really a v1.0. <b>Cut to a true MVP</b> — the reader loop on one screen.</li>
+    <li>Full REST API + multi-user schema <b>→ dropped for local-first.</b></li>
+    <li>Manual promote/demote statuses <b>→ an automatic engine</b> (reading promotes, tapping demotes) with one optional override.</li>
+    <li>Added two rules the PRD didn't have: <b>the Known ceiling</b> and <b>memorized-surah protection.</b></li>
+    <li>"Avoid vanity metrics" <b>→ made structural:</b> returns replace streaks; no XP exists to inflate.</li>
+    <li>Four reader modes <b>→ Review (reflow) ships first;</b> exact Mushaf-page layout is the fast-follow.</li>
+    <li>"Beautiful, calm, not gamified" (unspecified) <b>→ a defined design language:</b> two rooms, the goodly-tree, the fog metaphor.</li>
+    <li>"No AI tutoring" <b>→ narrow, honest AI:</b> build-time contextual glosses and adaptive weak-word hints.</li>
+  </ul>
+</div></section>
+
+<!-- ================= 05 INTERACTION MODEL ================= -->
+<section><div class="wrap">
+  <span class="num">05 — The Core Loop</span>
+  <h2>Reading is measurement.</h2>
+  <p class="lede">The single key activity is the tap. With meanings hidden, the act of tapping a word is the user honestly admitting "I don't know this cold." That gesture is how the app learns what you know — every metric flows from it.</p>
+
+  <div class="grid g2">
+    <div class="card"><h4>Engine A — Silent promotion</h4><p>Read a word without tapping = a clean read. Clean reads accumulate and quietly promote the word. Reading <em>is</em> the +1.</p></div>
+    <div class="card"><h4>Engine B — Tap demotion</h4><p>Tap a word to reveal its meaning = you needed to check. The word quietly steps down a level. Tapping <em>is</em> the −1.</p></div>
+  </div>
+  <p class="why">The override: the reveal carries one optional button — <b>"I knew it"</b> — for the curiosity tap. It cancels the demotion. It is the only manual action in the whole status system. Closing without it = the default step down.</p>
+
+  <h3>The status ladder</h3>
+  <div class="ladder">
+    <div class="rung"><div class="lv">0</div><div class="nm">Unknown</div><div class="hw">Default on import</div></div>
+    <div class="rung"><div class="lv">1</div><div class="nm">Seen</div><div class="hw">Passed once without tapping</div></div>
+    <div class="rung"><div class="lv">2</div><div class="nm">Familiar</div><div class="hw">Passed several times</div></div>
+    <div class="rung"><div class="lv">3</div><div class="nm">Recognized</div><div class="hw">Passed consistently — the ceiling for reading alone</div></div>
+    <div class="rung cap"><div class="lv">4</div><div class="nm">Known</div><div class="hw">Requires one honest meaning-reveal + "I knew it"</div></div>
+    <div class="rung cap"><div class="lv">5</div><div class="nm">Solid</div><div class="hw">Known + strong repeat confirmation</div></div>
+  </div>
+  <p class="why"><b>The ceiling rule &amp; the memorizer trap.</b> A ḥāfiẓ can recite Al-Ikhlas flawlessly while not knowing what يُولَد means. So reading alone tops out at Recognized; reaching Known always requires one real meaning-check. A fully-memorized surah correctly opens near 0% Known — that's the honest baseline, and where the most progress will come from.</p>
+
+  <h3>The reveal panel — disciplined</h3>
+  <div class="grid g2">
+    <div class="card"><h4>Shows</h4><p>The contextual meaning for this occurrence, and the optional "I knew it." Nothing else.</p></div>
+    <div class="card"><h4>Never shows</h4><p>Root, lemma, grammar labels, status numbers, dictionary-source pickers, share/bookmark, "click for more."</p></div>
+  </div>
+</div></section>
+
+<!-- ================= 06 METRICS ================= -->
+<section><div class="wrap">
+  <span class="num">06 — Metrics &amp; Honesty</span>
+  <h2>Returns, not streaks.</h2>
+  <p class="lede">Because status moves from behaviour and not button-presses, the numbers can't be gamed. Promoting 30 words in 60 seconds is structurally impossible. Integrity is built in, not policed.</p>
+  <div class="grid g3">
+    <div class="card"><h4>Did I return?</h4><p>Soft dots for today's sessions. Four is celebrated; zero is not shamed.</p></div>
+    <div class="card"><h4>Did words move?</h4><p>Honest promotions and demotions — real threshold crossings.</p></div>
+    <div class="card"><h4>What's clearer?</h4><p>Known-word growth by surah over 7 days, 30 days, 12 weeks.</p></div>
+  </div>
+  <p class="why">Opinion: <b>a streak is anti-sakinah by design</b> — its only power is the threat of losing it. The moment a streak counter lands on the home screen, the centre of gravity shifts from <em>return</em> to <em>don't break the chain</em>, and the app becomes the thing the user left LingQ to escape. So there is no streak, and no XP.</p>
+</div></section>
+
+<!-- ================= 07 TWO ROOMS ================= -->
+<section><div class="wrap">
+  <span class="num">07 — The Two Rooms</span>
+  <h2>A garden you return to. A study where you work.</h2>
+  <p class="lede">One palette would have flattened the experience. Two rooms make the transition itself a small ritual: step out of the calm green garden, into the warm focused study, and watch the page clear.</p>
+
+  <div class="rooms">
+    <!-- garden specimen -->
+    <div class="room garden">
+      <div class="tag">Home · Garden</div>
+      <div class="greet">ٱلسَّلَامُ عَلَيْكُمْ</div>
+      <div class="tree-wrap">
+        <svg width="200" height="240" viewBox="0 0 280 340" style="overflow:visible">
+          <defs>
+            <radialGradient id="sun" cx="50%" cy="40%" r="55%"><stop offset="0" stop-color="#F8ECC0" stop-opacity=".9"/><stop offset="100%" stop-color="#F8ECC0" stop-opacity="0"/></radialGradient>
+            <linearGradient id="leafG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A7CE86"/><stop offset="1" stop-color="#3F7A52"/></linearGradient>
+            <linearGradient id="trunkG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5A4528"/><stop offset="1" stop-color="#7C5F38"/></linearGradient>
+            <filter id="soft"><feGaussianBlur stdDeviation="2.2"/></filter>
+          </defs>
+          <circle cx="140" cy="140" r="120" fill="url(#sun)"/>
+          <g opacity=".4" stroke="#5A4528" stroke-width="3" fill="none" stroke-linecap="round">
+            <path d="M140 290 q-18 16 -40 22"/><path d="M140 290 q14 18 34 20"/><path d="M140 290 q-4 20 -8 30"/>
+          </g>
+          <g class="sway">
+            <path d="M133 292 C131 250 130 220 137 196 C139 188 145 188 146 196 C151 222 150 252 147 292 Z" fill="url(#trunkG)"/>
+            <g stroke="#6B5436" stroke-width="5" fill="none" stroke-linecap="round">
+              <path d="M140 214 q-26 -10 -40 -30"/><path d="M141 200 q24 -10 40 -28"/><path d="M140 188 q-2 -22 -4 -38"/>
+            </g>
+            <g class="canopy-sway"><g filter="url(#soft)">
+              <ellipse cx="98" cy="172" rx="40" ry="34" fill="url(#leafG)"/>
+              <ellipse cx="182" cy="168" rx="42" ry="36" fill="url(#leafG)"/>
+              <ellipse cx="140" cy="140" rx="52" ry="46" fill="url(#leafG)"/>
+              <ellipse cx="118" cy="118" rx="34" ry="30" fill="#A7CE86" opacity=".9"/>
+              <ellipse cx="166" cy="124" rx="30" ry="27" fill="#93C079" opacity=".85"/>
+            </g></g>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <!-- study specimen -->
+    <div class="room study">
+      <div class="tag">Reader · Study</div>
+      <div class="ayah">
+        <span class="w k">قُلْ</span> <span class="w k">هُوَ</span> <span class="w k">ٱللَّهُ</span> <span class="w u2">أَحَدٌ</span><br>
+        <span class="w k">ٱللَّهُ</span> <span class="w u0">ٱلصَّمَدُ</span>
+      </div>
+      <div class="revl">
+        <div class="rw">ٱلصَّمَدُ</div>
+        <div class="rm">the Eternal, the Absolute</div>
+      </div>
+    </div>
+  </div>
+  <p class="why" style="margin-top:18px"><b>The signature in each room.</b> In the study: <em>knowing is the absence of colour</em> — unknown words carry a faint warm tint that fades to luminous as they're learned; the page clears like fog lifting. In the garden: <em>the goodly tree</em> (Ibrāhīm 14:24, "its root firm, its branches in the sky") grows with your Known words and never dies — it rests when you're away and revives on return.</p>
+
+  <h3>Palette — Garden</h3>
+  <div class="palette">
+    <div class="chip"><div class="sw" style="background:#C7DAC5"></div><div class="nm">Field</div><div class="hex">#C7DAC5</div></div>
+    <div class="chip"><div class="sw" style="background:#DCE8D2"></div><div class="nm">Light</div><div class="hex">#DCE8D2</div></div>
+    <div class="chip"><div class="sw" style="background:#1E3A2C"></div><div class="nm">Evergreen ink</div><div class="hex">#1E3A2C</div></div>
+    <div class="chip"><div class="sw" style="background:#4E8C5F"></div><div class="nm">Leaf</div><div class="hex">#4E8C5F</div></div>
+    <div class="chip"><div class="sw" style="background:#C9A24B"></div><div class="nm">Gold thread</div><div class="hex">#C9A24B</div></div>
+  </div>
+  <h3>Palette — Study</h3>
+  <div class="palette">
+    <div class="chip"><div class="sw" style="background:#14110B"></div><div class="nm">Warm black</div><div class="hex">#14110B</div></div>
+    <div class="chip"><div class="sw" style="background:#1C1710"></div><div class="nm">Raise</div><div class="hex">#1C1710</div></div>
+    <div class="chip"><div class="sw" style="background:#F1E8D6"></div><div class="nm">Luminous ink</div><div class="hex">#F1E8D6</div></div>
+    <div class="chip"><div class="sw" style="background:#C98C37"></div><div class="nm">Tint (amber)</div><div class="hex">#C98C37</div></div>
+    <div class="chip"><div class="sw" style="background:#E7C878"></div><div class="nm">Gold light</div><div class="hex">#E7C878</div></div>
+  </div>
+
+  <h3>Typography</h3>
+  <div class="spec"><div class="lbl">Amiri Quran — the sacred text</div><div class="sp-amiri">لَمْ يَلِدْ وَلَمْ يُولَدْ</div></div>
+  <div class="spec"><div class="lbl">Cormorant Garamond — meanings &amp; calm lines</div><div class="sp-corm">the Eternal, the Absolute</div></div>
+  <div class="spec"><div class="lbl">Hanken Grotesk — labels &amp; data</div><div class="sp-hank">KNOWN · 5 / 15 &nbsp;&nbsp;·&nbsp;&nbsp; three returns today</div></div>
+
+  <h3>Motion language</h3>
+  <ul class="clean">
+    <li><b>One breath, ~5–6 seconds.</b> The tree sways and the lamp breathes on the same calm rhythm — slow enough to breathe along with.</li>
+    <li><b>The clearing.</b> Word tints transition softly (~400ms) as status changes; the page brightens over a session.</li>
+    <li><b>Restraint.</b> One signature motion per room. Reduced-motion is always respected.</li>
+  </ul>
+</div></section>
+
+<!-- ================= 08 READER ================= -->
+<section><div class="wrap">
+  <span class="num">08 — The Reader</span>
+  <h2>The page comes first. Tapping is the quiet thing you do on top.</h2>
+  <p class="lede">It reads like a real mushaf so that ḥifẓ page-memory stays intact — you remember where an ayah sits. One ayah is gently anchored (brighter, larger); the rest of the page stays as dimmed context. Tap any word, any time, to reveal its meaning.</p>
+  <div class="grid g2">
+    <div class="card"><h4>Review mode — ships first</h4><p>Comfortable reflow at phone-friendly size. The full tap → reveal → status engine lives here. The active line scales up for thumb-friendly targets.</p></div>
+    <div class="card"><h4>Mushaf page — fast-follow</h4><p>Exact Madani layout for page-memory, using page-specific glyph fonts. Harder to map words to meanings, so it comes after the core loop works.</p></div>
+  </div>
+  <p class="why">The reveal bar pins to the bottom (thumb zone) and never covers the ayah. Dismiss by tapping the page or swiping down. Local data means zero latency; the panel springs up. Word audio auto-plays on reveal (post-MVP), tying recognition to recitation.</p>
+</div></section>
+
+<!-- ================= 09 HOME ================= -->
+<section><div class="wrap">
+  <span class="num">09 — The Home</span>
+  <h2>Return to sakinah.</h2>
+  <p class="lede">A calm garden with a single living tree, a time-aware greeting, and one quiet invitation. No dashboard, no tab-bar of games, no level badge. Just a calm room with something alive in it.</p>
+  <ul class="clean">
+    <li><b>The greeting</b> shifts with the time of day — "the morning is open," "the night is still" — meeting you in the day's rhythm.</li>
+    <li><b>One invitation:</b> the single best next review, phrased as welcome — "Az-Zalzalah is near · nine words rest close to known" — with one word: <b>Return.</b></li>
+    <li><b>Returns today</b> as soft dots that light up. Never a streak.</li>
+    <li><b>The tree</b> is rooted in your solid words and grows its canopy with your Known words. It breathes. It never dies.</li>
+  </ul>
+</div></section>
+
+<!-- ================= 10 INFLUENCES ================= -->
+<section><div class="wrap">
+  <span class="num">10 — Influences</span>
+  <h2>What we took. What we left.</h2>
+  <div class="tl">
+    <div class="h take">Take</div><div class="h leave">Leave</div>
+    <div class="cell"><span class="src">Kalam</span>Warmth, craft, the sense that someone who cares made it; green life.</div>
+    <div class="cell r"><span class="src">Kalam</span>The scoreboard — XP, streaks, levels, daily-quiz funnel. Vanity engine.</div>
+    <div class="cell"><span class="src">Forest</span>Growth as an intrinsic metaphor — the reward <em>is</em> the activity made visible.</div>
+    <div class="cell r"><span class="src">Forest</span>The death mechanic — killing your tree is the same guilt-engine as a streak.</div>
+    <div class="cell"><span class="src">LingQ / Quran.com</span>Status lives at the point of reading; word audio; word-by-word glosses.</div>
+    <div class="cell r"><span class="src">LingQ / Quran.com</span>Heavy bottom sheets, source-pickers, root/lemma clutter, manual grading.</div>
+  </div>
+</div></section>
+
+<!-- ================= 11 NON-GOALS ================= -->
+<section><div class="wrap">
+  <span class="num">11 — Out of Scope</span>
+  <h2>What we are deliberately not building.</h2>
+  <div class="grid g3">
+    <div class="card"><p>Teaching letters or beginner grammar</p></div>
+    <div class="card"><p>Root / morphology as a core feature</p></div>
+    <div class="card"><p>A full tafsir or full mushaf replacement</p></div>
+    <div class="card"><p>AI tutoring or chat</p></div>
+    <div class="card"><p>Social feeds, friends, leaderboards</p></div>
+    <div class="card"><p>Streaks, XP, levels, badges</p></div>
+  </div>
+</div></section>
+
+<!-- ================= 12 BUILD ORDER ================= -->
+<section><div class="wrap">
+  <span class="num">12 — Build Order</span>
+  <h2>Smallest honest thing first.</h2>
+  <ul class="clean">
+    <li><b>Sprint 0 — Data.</b> Load Tanzil corpus + word-by-word glosses into local JSON. Normalize forms. Run the build-time AI pass for contextual glosses. Import the LingQ seed once.</li>
+    <li><b>Sprint 1 — Review reader.</b> Reflow mushaf-style page, anchored ayah, tint-by-status, tap → reveal → automatic status + "I knew it." This alone is a usable product for a week.</li>
+    <li><b>Sprint 2 — Garden home.</b> Breathing tree, time-aware greeting, the one invitation, returns dots.</li>
+    <li><b>Sprint 3 — Analytics.</b> Known-word growth, returns, opportunity surahs, 12-week view.</li>
+    <li><b>Sprint 4 — Fast-follows.</b> Exact Mushaf-page mode, word audio, weak-word mode, adaptive hints.</li>
+  </ul>
+  <p class="why">Opinion: the biggest risk is the PRD's own Risk #1 — <b>building replaces studying.</b> Ship Sprint 1, use it for a real week, and let what you actually miss dictate Sprint 2. Resist the urge to build all five before opening it once.</p>
+</div></section>
+
+<!-- ================= 13 OPEN QUESTIONS ================= -->
+<section><div class="wrap">
+  <span class="num">13 — Open Questions</span>
+  <h2>Still to settle.</h2>
+  <ul class="clean">
+    <li>Exact tokenization source and how tightly to follow it for word-to-meaning mapping.</li>
+    <li>Word audio in MVP, or fast-follow? (Currently fast-follow.)</li>
+    <li>Clean-read thresholds — fixed values for MVP, tuned later from real data.</li>
+    <li>Minimum reveal display time (~800ms) before "I knew it" activates, to protect honesty.</li>
+    <li>Verify the LingQ API version (v3 vs v2) and capture <code>extended_status</code> before the import.</li>
+    <li>Tree growth stages — how many, and what Known-word counts trigger each.</li>
+  </ul>
+</div></section>
+
+<!-- ================= FOOTER ================= -->
+<footer><div class="wrap">
+  <div class="fin">Not more content. <span>Better return.</span></div>
+  <div class="sig">Qur'an Review Companion · Design Dossier · June 2026</div>
+</div></footer>
+
+</body>
+</html>
