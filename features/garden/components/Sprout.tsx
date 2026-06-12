@@ -6,6 +6,11 @@ import { motion, useReducedMotion } from "motion/react";
 // Placeholder growth illustration — the cute sapling that stands in for the
 // painterly tree until that art lands. Mood-neutral by design (the background
 // shifts with time of day; the plant does not). Used faint, as backdrop.
+export const SPROUT_SWAY_ROTATE_DEG = 6;
+export const SPROUT_SWAY_SCALE_MIN = 0.96;
+export const SPROUT_SWAY_SCALE_MAX = 1.04;
+export const SPROUT_SWAY_DURATION_S = 6.2;
+
 export function Sprout({
   size = 72,
   className,
@@ -39,8 +44,27 @@ export function Sprout({
       />
       <motion.g
         style={{ transformBox: "fill-box", transformOrigin: "50% 92%" }}
-        animate={reduce ? undefined : { rotate: [-2.5, 2.5, -2.5] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        animate={
+          reduce
+            ? undefined
+            : {
+                rotate: [
+                  -SPROUT_SWAY_ROTATE_DEG,
+                  SPROUT_SWAY_ROTATE_DEG,
+                  -SPROUT_SWAY_ROTATE_DEG,
+                ],
+                scale: [
+                  SPROUT_SWAY_SCALE_MIN,
+                  SPROUT_SWAY_SCALE_MAX,
+                  SPROUT_SWAY_SCALE_MIN,
+                ],
+              }
+        }
+        transition={{
+          duration: SPROUT_SWAY_DURATION_S,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       >
         <path d="M36 48 C23 48 12 39 10 28 C24 26 35 33 36 48 Z" fill={`url(#leaf-${id})`} />
         <path d="M36 46 C49 44 60 35 62 24 C49 23 37 30 36 46 Z" fill={`url(#leaf-${id})`} />

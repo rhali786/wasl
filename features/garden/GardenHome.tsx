@@ -145,7 +145,7 @@ export function GardenHome({
         <main className="relative flex flex-1 flex-col items-center justify-center text-center">
           <Sprout
             size={232}
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.07]"
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.11]"
           />
           <div className="relative z-10 flex flex-col items-center gap-6">
             <p dir="rtl" className="font-arabic text-[2.15rem] leading-[2.5] text-foreground">
