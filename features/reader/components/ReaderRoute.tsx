@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Reader } from "./Reader";
-import { writeLastPage } from "../lib/lastPage";
 import { TOTAL_PAGES } from "@/features/corpus/lib/types";
 import type { CorpusPage } from "@/features/corpus/lib/types";
 import type { ReaderMode } from "../lib/types";
 
-// Routes Reader's pagination/exit callbacks to /reader/[page] and /browse,
-// and remembers the last-visited page for the bottom nav's Reader tab.
+// Routes Reader's pagination/exit callbacks to /reader/[page] and /browse.
 export function ReaderRoute({
   page,
   pageNumber,
@@ -21,10 +18,6 @@ export function ReaderRoute({
 }) {
   const router = useRouter();
 
-  useEffect(() => {
-    writeLastPage(pageNumber);
-  }, [pageNumber]);
-
   return (
     <Reader
       page={page}
@@ -34,7 +27,6 @@ export function ReaderRoute({
       onNextPage={() => router.push(`/reader/${pageNumber + 1}`)}
       onPreviousPage={() => router.push(`/reader/${pageNumber - 1}`)}
       onGoToPage={(p) => router.push(`/reader/${p}`)}
-      onExit={() => router.push("/")}
     />
   );
 }

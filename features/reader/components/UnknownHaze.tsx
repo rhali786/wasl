@@ -12,7 +12,7 @@ export function UnknownHaze({ level }: { level: StatusLevel }) {
       style={{
         width: "calc(100% + 0.6em)",
         height: "1.4em",
-        background: "radial-gradient(closest-side, rgba(110,130,120,0.22), transparent 75%)",
+        background: "radial-gradient(closest-side, var(--unknown-haze), transparent 75%)",
         filter: "blur(5px)",
       }}
     />

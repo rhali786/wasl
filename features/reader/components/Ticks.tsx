@@ -2,9 +2,11 @@ import type { StatusLevel } from "@/features/review/lib/types";
 
 // Status display = undermark (locked 2026-06-10): the word stays crisp ink;
 // four short ticks beneath it fill 0-4 as the form is learned. See
-// docs/design-interaction.md "Status levels".
-export const TICK_ON = "#3f8f5c";
-export const TICK_OFF = "rgba(20,49,36,0.12)";
+// docs/design-interaction.md "Status levels". Colors come from --tick-on /
+// --tick-off (app/globals.css) via the bg-tick-on/bg-tick-off Tailwind
+// tokens, which brighten under .dark for night legibility.
+export const TICK_ON = "var(--tick-on)";
+export const TICK_OFF = "var(--tick-off)";
 
 export function Ticks({ level }: { level: StatusLevel }) {
   return (
@@ -13,8 +15,7 @@ export function Ticks({ level }: { level: StatusLevel }) {
         <span
           key={i}
           data-testid="tick"
-          className="h-[2px] w-[5px] rounded-full"
-          style={{ background: i < level ? TICK_ON : TICK_OFF }}
+          className={`h-[2px] w-[5px] rounded-full ${i < level ? "bg-tick-on" : "bg-tick-off"}`}
         />
       ))}
     </span>

@@ -38,6 +38,10 @@ as dormant until that work begins. See `docs/design.md` §4 (Architecture).
 - **Env files:** Next.js loads `.env` then `.env.local` (later overrides).
   Keep real secrets out of git — `.env.local` and `.env` are gitignored;
   `.env.example` stays committed as the template.
+- **Commit after every round of feedback.** Once a requested change is
+  implemented, tests pass, and `npm run build` is green, create a git commit
+  for that round's changes — the user has pre-authorized this, no need to ask
+  each time.
 
 ---
 
@@ -141,6 +145,21 @@ under `features/<feature>/`.
 - Log levels: `logger.error` for caught exceptions, `logger.warn` for
   recoverable issues, `logger.info` for significant events, `logger.debug`
   for dev-only detail.
+
+---
+
+## Reader UX (product feedback — keep aligned)
+
+- **Mode control:** Study / Mushaf is a segmented slider (both labels visible;
+  thumb slides to the active side). Persist via `features/reader/lib/readerMode.ts`.
+- **Page metadata:** sūrah, juz, and page number sit **between** the bottom
+  paging arrows — not in the top header.
+- **Promotion whisper:** when Engine A promotes word-forms on page finish, show
+  a brief "+N words learned" toast near the bottom. Keep it slow and calm
+  (`FLASH_MS` ≈ 5.5s, fade ≈ 1.2s) — not a snap.
+- **Swipe paging:** horizontal touch swipes on the reader frame turn pages
+  (left = next, right = previous). Works in mobile browsers / installed PWA;
+  not native-app-only. Desktop still uses the arrow buttons.
 
 ---
 

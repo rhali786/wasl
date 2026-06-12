@@ -6,17 +6,12 @@ import { TOTAL_PAGES } from "@/features/corpus/lib/types";
 jest.mock("@/features/review/store", () => ({
   getStatuses: jest.fn(() => ({})),
   demoteWord: jest.fn(),
-  finishPage: jest.fn(),
+  finishPage: jest.fn(() => ({})),
 }));
 
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-}));
-
-const mockWriteLastPage = jest.fn();
-jest.mock("../lib/lastPage", () => ({
-  writeLastPage: (page: number) => mockWriteLastPage(page),
 }));
 
 import { finishPage } from "@/features/review/store";
@@ -42,11 +37,6 @@ describe("ReaderRoute", () => {
     jest.clearAllMocks();
   });
 
-  it("persists the visited page on mount", () => {
-    render(<ReaderRoute page={PAGE} pageNumber={5} />);
-    expect(mockWriteLastPage).toHaveBeenCalledWith(5);
-  });
-
   it("Next page navigates to /reader/{n+1} and finishes the page (Study)", () => {
     render(<ReaderRoute page={PAGE} pageNumber={5} />);
     fireEvent.click(screen.getByLabelText("Next page"));
@@ -59,12 +49,6 @@ describe("ReaderRoute", () => {
     fireEvent.click(screen.getByLabelText("Previous page"));
     expect(mockPush).toHaveBeenCalledWith("/reader/4");
     expect(mockFinishPage).not.toHaveBeenCalled();
-  });
-
-  it("Done for now returns to the Garden home", () => {
-    render(<ReaderRoute page={PAGE} pageNumber={5} />);
-    fireEvent.click(screen.getByLabelText("Done for now"));
-    expect(mockPush).toHaveBeenCalledWith("/");
   });
 
   it("disables Next page on the last page", () => {

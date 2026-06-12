@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { Reader } from "../components/Reader";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { Reader, FLASH_FADE_MS, FLASH_MS } from "../components/Reader";
 import { demote } from "@/features/review/lib/engine";
 import { defaultStatus, type WordStatus } from "@/features/review/lib/types";
 import type { CorpusPage } from "@/features/corpus/lib/types";
@@ -103,6 +103,7 @@ describe("Reader", () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    window.localStorage.clear();
   });
 
   function pageLines() {
@@ -134,62 +135,84 @@ describe("Reader", () => {
     render(<Reader page={PAGE} />);
     // "نعبد" is Known (4) -> all four ticks filled
     const known = ticksFor("نعبد");
-    expect(known.filter((t) => t.style.background === "rgb(63, 143, 92)")).toHaveLength(4);
+    expect(known.filter((t) => t.className.includes("bg-tick-on"))).toHaveLength(4);
     // "الله" is Unknown (0) -> haze present
     const alif = pageLines().getByText("الله");
     expect(within(alif.parentElement as HTMLElement).getByTestId("unknown-haze")).toBeInTheDocument();
   });
 
-  it("Study: tapping a word opens the ribbon, demotes (Engine B), and updates ticks for every occurrence of that form", () => {
+  it("Study: tapping a word reveals its meaning nearby, demotes (Engine B), and updates ticks for every occurrence of that form", () => {
     render(<Reader page={PAGE} />);
     const occurrences = pageLines().getAllByText("بسم");
     fireEvent.click(occurrences[0]);
 
     expect(mockDemoteWord).toHaveBeenCalledWith("بسم");
 
-    // ribbon reveals the tapped occurrence's gloss
-    const ribbon = screen.getByTestId("ribbon");
-    expect(within(ribbon).getByText("In the name")).toBeInTheDocument();
-    expect(ribbon).toHaveStyle({ opacity: "1" });
+    // the meaning card reveals near the tapped occurrence
+    expect(screen.getByTestId("word-meaning")).toHaveTextContent("In the name");
 
     // level 2 -> demote -> level 1 for BOTH occurrences (per-form sharing)
-    expect(ticksFor("بسم", 0).filter((t) => t.style.background === "rgb(63, 143, 92)")).toHaveLength(1);
-    expect(ticksFor("بسم", 1).filter((t) => t.style.background === "rgb(63, 143, 92)")).toHaveLength(1);
+    expect(ticksFor("بسم", 0).filter((t) => t.className.includes("bg-tick-on"))).toHaveLength(1);
+    expect(ticksFor("بسم", 1).filter((t) => t.className.includes("bg-tick-on"))).toHaveLength(1);
   });
 
-  it("Mushaf: tapping reveals but does not demote, and the undermark stays read-only", () => {
+  it("Mushaf: tapping reveals the meaning but does not demote, and the undermark stays read-only", () => {
     render(<Reader page={PAGE} initialMode="mushaf" />);
     const occurrences = pageLines().getAllByText("بِسْمِ"); // full tashkīl in Mushaf
     fireEvent.click(occurrences[0]);
 
     expect(mockDemoteWord).not.toHaveBeenCalled();
-    const ribbon = screen.getByTestId("ribbon");
-    expect(within(ribbon).getByText("In the name")).toBeInTheDocument();
+    expect(screen.getByTestId("word-meaning")).toHaveTextContent("In the name");
 
     // level unchanged (still 2 -> two ticks filled)
-    expect(ticksFor("بِسْمِ", 0).filter((t) => t.style.background === "rgb(63, 143, 92)")).toHaveLength(2);
+    expect(ticksFor("بِسْمِ", 0).filter((t) => t.className.includes("bg-tick-on"))).toHaveLength(2);
   });
 
-  it("mode toggle switches between Study (stripped) and Mushaf (full tashkīl) display", () => {
+  it("mode slider shows Study and Mushaf labels and switches display", () => {
     render(<Reader page={PAGE} />);
+    expect(screen.getByTestId("mode-slider")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Study" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getAllByText("بسم")).toHaveLength(2);
     expect(screen.queryByText("بِسْمِ")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText(/Mode: Study/));
+    fireEvent.click(screen.getByRole("button", { name: "Mushaf" }));
 
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getAllByText("بِسْمِ")).toHaveLength(2);
     expect(screen.queryByText("بسم")).not.toBeInTheDocument();
   });
 
-  it("ribbon is always mounted (never shifts the page) and toggles via opacity", () => {
+  it("Mushaf mode persists across page navigation (sticky until the slider is used)", () => {
+    const { unmount } = render(<Reader page={PAGE} initialMode="mushaf" />);
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
+    unmount();
+
+    // Next page push carries no ?mode= query — initialMode is undefined, as
+    // ReaderRoute would pass it on /reader/{n+1}.
     render(<Reader page={PAGE} />);
-    const ribbon = screen.getByTestId("ribbon");
-    expect(ribbon.className).toContain("absolute");
-    expect(ribbon).toHaveStyle({ opacity: "0" });
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("an explicit ?mode= entry overrides and re-persists the mode", () => {
+    const { unmount } = render(<Reader page={PAGE} initialMode="mushaf" />);
+    expect(screen.getByRole("button", { name: "Mushaf" })).toHaveAttribute("aria-pressed", "true");
+    unmount();
+
+    // Re-entering from Home with ?mode=study wins over the persisted Mushaf.
+    render(<Reader page={PAGE} initialMode="study" />);
+    expect(screen.getByRole("button", { name: "Study" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("tapping a word shows its meaning card; tapping elsewhere dismisses it", () => {
+    render(<Reader page={PAGE} />);
+    expect(screen.queryByTestId("word-meaning")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getAllByText("بسم")[0]);
-    expect(screen.getByTestId("ribbon")).toBe(ribbon); // same node, not remounted
-    expect(ribbon).toHaveStyle({ opacity: "1" });
+    expect(screen.getByTestId("word-meaning")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("reader-frame"));
+    expect(screen.queryByTestId("word-meaning")).not.toBeInTheDocument();
   });
 
   it("Engine A: Next page (Study) finishes the page — untapped words get clean-read credit", () => {
@@ -248,18 +271,87 @@ describe("Reader", () => {
     expect(screen.queryByLabelText("Exit reader")).not.toBeInTheDocument();
   });
 
-  it("Done for now ends the session and exits without mutating status", () => {
-    const onExit = jest.fn();
-    const endSession = jest.fn();
-    mockUseSession.mockReturnValue({ ...noSession(), endSession });
-    render(<Reader page={PAGE} onExit={onExit} />);
+  it("shows surah, juz, and page metadata between the paging arrows", () => {
+    render(<Reader page={PAGE} hasNextPage hasPreviousPage />);
+    const next = screen.getByLabelText("Next page");
+    const prev = screen.getByLabelText("Previous page");
+    const meta = screen.getByText(/Al-Fatihah · juz 1/);
+    expect(next.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(prev.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(screen.getByText(/page 5/)).toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByLabelText("Done for now"));
+  it("swiping left on touch advances to the next page", () => {
+    const onNextPage = jest.fn();
+    render(<Reader page={PAGE} hasNextPage onNextPage={onNextPage} />);
+
+    const frame = screen.getByTestId("reader-frame");
+    fireEvent.touchStart(frame, { touches: [{ clientX: 200, clientY: 300 }] });
+    fireEvent.touchEnd(frame, { changedTouches: [{ clientX: 120, clientY: 300 }] });
+
+    expect(onNextPage).toHaveBeenCalledTimes(1);
+  });
+
+  it("swiping right on touch goes to the previous page", () => {
+    const onPreviousPage = jest.fn();
+    render(<Reader page={PAGE} hasPreviousPage onPreviousPage={onPreviousPage} />);
+
+    const frame = screen.getByTestId("reader-frame");
+    fireEvent.touchStart(frame, { touches: [{ clientX: 120, clientY: 300 }] });
+    fireEvent.touchEnd(frame, { changedTouches: [{ clientX: 200, clientY: 300 }] });
+
+    expect(onPreviousPage).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a slow-fading promotion whisper when finishing a page promotes words", () => {
+    jest.useFakeTimers();
+    const onNextPage = jest.fn();
+    mockFinishPage.mockImplementation(() => ({
+      ...backing,
+      الله: { id: "الله", level: 1, cleanReads: 1 },
+    }));
+
+    try {
+      render(<Reader page={PAGE} hasNextPage onNextPage={onNextPage} />);
+      fireEvent.click(screen.getByLabelText("Next page"));
+
+      expect(screen.getByTestId("promotion-flash")).toHaveTextContent("+1 word learned");
+
+      act(() => {
+        jest.advanceTimersByTime(FLASH_MS - FLASH_FADE_MS - 1);
+      });
+      expect(screen.getByTestId("promotion-flash").className).not.toContain("opacity-0");
+
+      act(() => {
+        jest.advanceTimersByTime(FLASH_FADE_MS + 1);
+      });
+      expect(screen.queryByTestId("promotion-flash")).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("no longer shows a 'Done for now' button", () => {
+    render(<Reader page={PAGE} />);
+    expect(screen.queryByLabelText("Done for now")).not.toBeInTheDocument();
+  });
+
+  it("the time's-up nudge's Done button ends the session and dismisses the nudge", () => {
+    const endSession = jest.fn();
+    const dismissNudge = jest.fn();
+    mockUseSession.mockReturnValue({
+      ...noSession(),
+      session: ACTIVE_SESSION,
+      nudge: { kind: "timeup" },
+      endSession,
+      dismissNudge,
+    });
+    render(<Reader page={PAGE} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
 
     expect(endSession).toHaveBeenCalledTimes(1);
-    expect(onExit).toHaveBeenCalledTimes(1);
-    expect(mockFinishPage).not.toHaveBeenCalled();
-    expect(mockDemoteWord).not.toHaveBeenCalled();
+    expect(dismissNudge).toHaveBeenCalledTimes(1);
   });
 
   it("shows the session timer bar only while a session is active", () => {

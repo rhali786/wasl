@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { FitLine } from "./FitLine";
 import { Ticks } from "./Ticks";
 import { UnknownHaze } from "./UnknownHaze";
 import { stripTashkil } from "../lib/displayText";
+import { readReaderMode, writeReaderMode } from "../lib/readerMode";
 import type { ReaderMode } from "../lib/types";
 import { getStatuses, demoteWord, finishPage } from "@/features/review/store";
 import { useSession } from "@/features/session/components/SessionProvider";
@@ -27,6 +28,14 @@ function wordIdsOf(page: CorpusPage): string[] {
   return ids;
 }
 
+// The promotion whisper shows for FLASH_MS total, fading out over the last
+// FLASH_FADE_MS of that — a calm, unhurried close rather than a snap.
+export const FLASH_MS = 5500;
+export const FLASH_FADE_MS = 1200;
+
+// A horizontal drag past this many px counts as a page-turn swipe.
+const SWIPE_THRESHOLD_PX = 50;
+
 function defaultStatuses(ids: readonly string[]): Record<string, WordStatus> {
   const result: Record<string, WordStatus> = {};
   for (const id of ids) result[id] = defaultStatus(id);
@@ -41,12 +50,50 @@ function formatRemaining(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+function ModeSlider({
+  mode,
+  onChange,
+}: {
+  mode: ReaderMode;
+  onChange: (next: ReaderMode) => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Reader mode"
+      data-testid="mode-slider"
+      className="relative flex w-[10.5rem] rounded-full bg-card p-0.5 ring-1 ring-border"
+    >
+      <span
+        aria-hidden
+        className="absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-full transition-transform duration-200 ease-out"
+        style={{
+          background: ACCENT[mode].color,
+          transform: mode === "study" ? "translateX(0)" : "translateX(100%)",
+        }}
+      />
+      {(["study", "mushaf"] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          aria-pressed={mode === option}
+          className={`relative z-10 flex-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+            mode === option ? "text-white" : "text-muted-foreground"
+          }`}
+        >
+          {ACCENT[option].name}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Reader({
   page,
-  initialMode = "study",
+  initialMode,
   onNextPage,
   onPreviousPage,
-  onExit,
   onGoToPage,
   hasNextPage = false,
   hasPreviousPage = false,
@@ -55,8 +102,6 @@ export function Reader({
   initialMode?: ReaderMode;
   onNextPage?: () => void;
   onPreviousPage?: () => void;
-  /** "Done for now" — leaves the reader (and the session) for the Garden. */
-  onExit?: () => void;
   /** Jump to a sūrah's page (used when accepting a session step nudge). */
   onGoToPage?: (pageNumber: number) => void;
   hasNextPage?: boolean;
@@ -64,15 +109,33 @@ export function Reader({
 }) {
   const { session, remainingMs, nudge, dismissNudge, advanceStep, endSession } =
     useSession();
-  const [mode, setMode] = useState<ReaderMode>(initialMode);
+  const [mode, setMode] = useState<ReaderMode>(initialMode ?? "study");
   const wordIds = useMemo(() => wordIdsOf(page), [page]);
   const [statuses, setStatuses] = useState<Record<string, WordStatus>>(() =>
     defaultStatuses(wordIds)
   );
   const [tappedIds, setTappedIds] = useState<ReadonlySet<string>>(new Set());
-  const [selected, setSelected] = useState<{ key: string; word: CorpusWord } | null>(null);
+  const [selected, setSelected] = useState<{ key: string; word: CorpusWord; line: number } | null>(
+    null
+  );
+  const [flashCount, setFlashCount] = useState<number | null>(null);
+  const [flashFading, setFlashFading] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const accent = ACCENT[mode];
+
+  // Tracks whether the current page has already been "finished" (Engine A),
+  // so it is credited exactly once — whether by Next, a step-jump, or by
+  // leaving the reader entirely (see finishCurrentPage/unmount cleanup below).
+  const finishedRef = useRef(false);
+  const wordIdsRef = useRef(wordIds);
+  const tappedRef = useRef(tappedIds);
+  const statusesRef = useRef(statuses);
+  const modeRef = useRef(mode);
+  wordIdsRef.current = wordIds;
+  tappedRef.current = tappedIds;
+  statusesRef.current = statuses;
+  modeRef.current = mode;
 
   // Real statuses come from the store on mount/page-change, client-only —
   // SSR renders defaults (Unknown) to avoid a hydration mismatch, same
@@ -81,10 +144,54 @@ export function Reader({
     setStatuses(getStatuses(wordIds));
     setTappedIds(new Set());
     setSelected(null);
+    finishedRef.current = false;
   }, [wordIds]);
 
-  function tap(key: string, word: CorpusWord) {
-    setSelected({ key, word });
+  // Credit the page on unmount if it was never explicitly finished (Next or
+  // a step-jump) — covers leaving the reader mid-page (nav-away, session
+  // end). Mushaf/free reads outside Study mode never mutate status.
+  useEffect(() => {
+    return () => {
+      if (modeRef.current === "study" && !finishedRef.current) {
+        finishPage(wordIdsRef.current, tappedRef.current);
+        finishedRef.current = true;
+      }
+    };
+  }, []);
+
+  // Brief "+N" whisper when finishing a page promotes word-forms; lingers,
+  // then fades out on its own (see FLASH_MS/FLASH_FADE_MS).
+  useEffect(() => {
+    if (flashCount === null) return;
+    setFlashFading(false);
+    const fadeTimer = setTimeout(() => setFlashFading(true), FLASH_MS - FLASH_FADE_MS);
+    const dismissTimer = setTimeout(() => setFlashCount(null), FLASH_MS);
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(dismissTimer);
+    };
+  }, [flashCount]);
+
+  // Mode resolution: an explicit ?mode= (from the home entry cards) wins and
+  // is persisted; page-to-page navigation carries no query, so it falls back
+  // to the persisted mode. This keeps Mushaf "sticky" until the user taps
+  // the mode toggle, rather than relapsing to Study on every page turn.
+  useEffect(() => {
+    if (initialMode) {
+      setMode(initialMode);
+      writeReaderMode(initialMode);
+    } else {
+      setMode(readReaderMode());
+    }
+  }, [initialMode]);
+
+  function switchMode(next: ReaderMode) {
+    setMode(next);
+    writeReaderMode(next);
+  }
+
+  function tap(key: string, word: CorpusWord, line: number) {
+    setSelected({ key, word, line });
     if (mode === "study") {
       const next = demoteWord(word.id);
       setStatuses((prev) => ({ ...prev, [word.id]: next }));
@@ -92,12 +199,23 @@ export function Reader({
     }
   }
 
-  function goNext() {
-    // Engine A — finishing a page (advancing to the next one) is the clean
-    // read; Mushaf reading never promotes (Engine A is dormant there).
-    if (mode === "study") {
-      finishPage(wordIds, tappedIds);
+  // Engine A — finishing a page is the clean read; Mushaf reading never
+  // promotes (Engine A is dormant there). Idempotent per page (finishedRef)
+  // so Next, a step-jump, and the unmount cleanup never double-credit.
+  function finishCurrentPage() {
+    if (mode !== "study" || finishedRef.current) return;
+    finishedRef.current = true;
+    const before = statuses;
+    const after = finishPage(wordIds, tappedIds);
+    let promoted = 0;
+    for (const id of new Set(wordIds)) {
+      if ((after[id]?.level ?? 0) > (before[id]?.level ?? 0)) promoted++;
     }
+    if (promoted > 0) setFlashCount(promoted);
+  }
+
+  function goNext() {
+    finishCurrentPage();
     setSelected(null);
     onNextPage?.();
   }
@@ -107,17 +225,34 @@ export function Reader({
     onPreviousPage?.();
   }
 
-  // "Done for now" — close the session and return to the Garden (the reward).
-  function done() {
-    endSession();
-    onExit?.();
-  }
-
-  // Accept a session step nudge: advance the plan and open that sūrah's page.
+  // Accept a session step nudge: credit the page being left, advance the
+  // plan, and open that sūrah's page.
   function goToStep(pageNumber: number) {
+    finishCurrentPage();
     advanceStep();
     dismissNudge();
     onGoToPage?.(pageNumber);
+  }
+
+  // Swipe to turn the page — a horizontal drag past SWIPE_THRESHOLD_PX acts
+  // like the Next/Previous buttons. Swiping left advances (matches the
+  // right-to-left reading direction, same as the Next chevron); swiping
+  // right goes back.
+  function handleTouchStart(e: React.TouchEvent) {
+    const touch = e.touches[0];
+    touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    const touch = e.changedTouches[0];
+    if (!start || !touch) return;
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX || Math.abs(dx) <= Math.abs(dy)) return;
+    if (dx < 0 && hasNextPage) goNext();
+    else if (dx > 0 && hasPreviousPage) goPrevious();
   }
 
   return (
@@ -129,6 +264,9 @@ export function Reader({
       <div
         data-testid="reader-frame"
         className="relative mx-auto flex h-full w-full max-w-[440px] flex-1 flex-col"
+        onClick={() => setSelected(null)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* mode ambient: accent glow */}
         <div
@@ -164,68 +302,8 @@ export function Reader({
 
         {/* header — the ribbon hangs just below this, overlaying the page */}
         <div className="relative z-20">
-          <div className="relative z-10 flex items-center justify-between px-5 pt-3 pb-2">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {page.surah} · juz {page.juz}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                page {page.page} · {page.firstVerse}–{page.lastVerse.split(":")[1]}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={done}
-                aria-label="Done for now"
-                className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground ring-1 ring-border"
-              >
-                Done for now
-              </button>
-              <button
-                onClick={() => setMode((m) => (m === "study" ? "mushaf" : "study"))}
-                className="flex items-center gap-2 rounded-full bg-card py-1 pl-1 pr-3 ring-1 ring-border"
-                aria-label={`Mode: ${accent.name} (tap to switch)`}
-              >
-                <span
-                  className="grid size-7 place-items-center rounded-full text-sm font-bold text-white"
-                  style={{ background: accent.color }}
-                >
-                  {accent.badge}
-                </span>
-                <span className="text-sm font-medium text-foreground">{accent.name}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* the ribbon — always mounted so it never shifts the page; opacity
-              + pointer-events toggle visibility */}
-          <div
-            data-testid="ribbon"
-            className="absolute inset-x-0 top-full z-30 flex items-center gap-3 border-t border-border bg-card px-4 py-2 shadow-sm transition-all duration-300"
-            style={{
-              transform: selected ? "translateY(0)" : "translateY(-6px)",
-              opacity: selected ? 1 : 0,
-              pointerEvents: selected ? "auto" : "none",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {selected ? (
-              <>
-                <span dir="rtl" className="font-arabic text-xl text-foreground">
-                  {selected.word.t}
-                </span>
-                <span className="font-display text-base italic text-muted-foreground">
-                  {selected.word.en}
-                </span>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="ml-auto grid size-6 place-items-center rounded-full text-muted-foreground hover:bg-accent"
-                  aria-label="Clear"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </>
-            ) : null}
+          <div className="relative z-10 flex items-center justify-end px-5 pt-3 pb-2">
+            <ModeSlider mode={mode} onChange={switchMode} />
           </div>
         </div>
 
@@ -255,7 +333,10 @@ export function Reader({
                   Your time is up. Rest, or keep reading.
                 </span>
                 <button
-                  onClick={done}
+                  onClick={() => {
+                    endSession();
+                    dismissNudge();
+                  }}
                   className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
                 >
                   Done
@@ -277,7 +358,6 @@ export function Reader({
         <div
           data-testid="page-lines"
           className="relative z-10 flex-1 overflow-hidden px-4 py-2"
-          onClick={() => setSelected(null)}
         >
           <div className="flex h-full flex-col">
             {page.lines.map((line) => (
@@ -294,7 +374,7 @@ export function Reader({
                     return (
                       <span
                         key={key}
-                        className="mx-0.5 grid size-[1.35em] shrink-0 place-items-center rounded-full text-[0.6em] font-semibold text-garden-600 ring-1 ring-garden-400/60"
+                        className="mx-0.5 grid size-[1.35em] shrink-0 place-items-center rounded-full text-[0.6em] font-semibold text-ayah-marker-text ring-1 ring-ayah-marker-ring"
                       >
                         {word.ayah}
                       </span>
@@ -310,7 +390,7 @@ export function Reader({
                       tabIndex={0}
                       onClick={(e) => {
                         e.stopPropagation();
-                        tap(key, word);
+                        tap(key, word, line.line);
                       }}
                       className="relative inline-block cursor-pointer whitespace-nowrap rounded-md px-[0.12em] text-foreground"
                       style={
@@ -322,6 +402,19 @@ export function Reader({
                       <UnknownHaze level={level} />
                       <span className="relative">{text}</span>
                       <Ticks level={level} />
+                      {isSelected ? (
+                        <span
+                          data-testid="word-meaning"
+                          dir="ltr"
+                          className={`pointer-events-none absolute left-1/2 z-30 w-max max-w-[12em] -translate-x-1/2 whitespace-normal rounded-lg bg-card/90 px-2.5 py-1 text-center font-display text-xs italic text-muted-foreground shadow-sm ring-1 ring-border/70 ${
+                            line.line > page.lines.length / 2
+                              ? "bottom-full mb-1.5"
+                              : "top-full mt-1.5"
+                          }`}
+                        >
+                          {word.en}
+                        </span>
+                      ) : null}
                     </span>
                   );
                 })}
@@ -330,22 +423,46 @@ export function Reader({
           </div>
         </div>
 
+        {/* promotion whisper — a brief "+N" when finishing a page promotes
+            word-forms (Engine A). Lingers, then fades on its own (see
+            flashCount effect). */}
+        {flashCount !== null ? (
+          <div
+            data-testid="promotion-flash"
+            className={`pointer-events-none absolute inset-x-0 bottom-24 z-20 flex items-center justify-center transition-opacity duration-[1200ms] ${
+              flashFading ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            <span className="rounded-full bg-gold/90 px-3 py-1 text-xs font-semibold text-white shadow-md">
+              +{flashCount} word{flashCount === 1 ? "" : "s"} learned
+            </span>
+          </div>
+        ) : null}
+
         {/* paging — Next is the page-finish trigger (Engine A, Study only).
-            Page number lives in the header now; bottom padding clears the
+            Surah/juz/page sits between the arrows; bottom padding clears the
             fixed BottomNav rendered by the route. */}
-        <div className="relative z-10 flex items-center justify-center gap-10 px-5 pb-24 pt-2">
+        <div className="relative z-10 flex items-center justify-between gap-3 px-5 pb-24 pt-2">
           <button
             onClick={goNext}
             disabled={!hasNextPage}
-            className="grid size-9 place-items-center rounded-full bg-card text-foreground ring-1 ring-border disabled:opacity-30"
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-card text-foreground ring-1 ring-border disabled:opacity-30"
             aria-label="Next page"
           >
             <ChevronLeft className="size-5" />
           </button>
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {page.surah} · juz {page.juz}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              page {page.page} · {page.firstVerse}–{page.lastVerse.split(":")[1]}
+            </p>
+          </div>
           <button
             onClick={goPrevious}
             disabled={!hasPreviousPage}
-            className="grid size-9 place-items-center rounded-full bg-card text-foreground ring-1 ring-border disabled:opacity-30"
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-card text-foreground ring-1 ring-border disabled:opacity-30"
             aria-label="Previous page"
           >
             <ChevronRight className="size-5" />
