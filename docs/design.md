@@ -48,10 +48,17 @@ This architecture reflects a major redesign from previous iterations:
   page earn a clean-read credit and promote at thresholds.
 - **Engine B = Study only:** tapping demotes one level live in Study mode;
   **Mushaf mutates no status at all** (reverent; reveal is free, undermark read-only).
-- **Reveal = the ribbon:** a slim strip below the header (not a bottom bar); it
-  overlays and never shifts the page.
-- **Session timer:** faint right-to-left bar; adjustable in 5-min increments.
-- **Clearer session model:** three steps per return (memorized, memorizing, longer).
+- **Reveal = a floating meaning card** near the tapped word (above or below it
+  depending on its line, to stay on-screen); tap anywhere to dismiss. Replaces
+  the earlier below-header ribbon.
+- **Session timer:** faint right-to-left bar; adjustable in 5-min increments;
+  keeps running on tab/focus loss — only in-app navigation away ends a session.
+- **Clearer session model:** three steps per return (memorizing, memorized, longer).
+- **Sessions are Study-only:** the timer/plan/nudges begin only on a deliberate
+  "Enter as Study" — from Home's Study card, or the bottom-nav Reader tab.
+  Mushaf and Browse→open are free reads with no session chrome. A brief
+  intro/summary message bookends each session, fading out over its display
+  duration before it dismisses.
 - **Onboarding:** 2 screens (memorized + memorizing); longer surahs calculated automatically.
 - **Return messages:** warm, inviting, emphasize repair over performance.
 - **Tree:** high-definition artistic illustration.

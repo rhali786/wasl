@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { usePathname } from "next/navigation";
 import { BottomNav } from "../components/BottomNav";
-import { writeLastPage } from "@/features/reader/lib/lastPage";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/"),
@@ -37,15 +36,24 @@ describe("BottomNav", () => {
     expect(screen.getByRole("link", { name: "Browse" })).not.toHaveAttribute("aria-current");
   });
 
-  it("Reader tab defaults to /reader/1 when no page has been visited", () => {
+  it("Reader tab defaults to /reader/1 in Study mode when no sūrahs are set up", () => {
     render(<BottomNav />);
-    expect(screen.getByRole("link", { name: "Reader" })).toHaveAttribute("href", "/reader/1");
+    expect(screen.getByRole("link", { name: "Reader" })).toHaveAttribute(
+      "href",
+      "/reader/1?mode=study"
+    );
   });
 
-  it("Reader tab opens the last-visited page", () => {
-    writeLastPage(42);
+  it("Reader tab opens the page Home recommends, in Study mode (the sūrah being memorized)", async () => {
+    window.localStorage.setItem(
+      "wird:settings",
+      JSON.stringify({ memorized: [], memorizing: [112], sessionMinutes: 5 })
+    );
     render(<BottomNav />);
-    expect(screen.getByRole("link", { name: "Reader" })).toHaveAttribute("href", "/reader/42");
+    expect(await screen.findByRole("link", { name: "Reader" })).toHaveAttribute(
+      "href",
+      "/reader/604?mode=study" // Al-Ikhlas
+    );
   });
 
   it("a /reader/[page] pathname marks the Reader tab active", () => {

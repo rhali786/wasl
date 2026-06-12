@@ -22,15 +22,19 @@ soft twinkling accents. All status is shown through green shades and fog.
   a sense of repair ("Good morning, Al-Ghāshiyah is waiting" / "Welcome
   back, the words are still here" / "After a long gap: You belong here").
 - **Session model:** a session has three optional steps (no pressure to
-  complete; user can stop anytime by confirming "done for now"):
-  1. Memorized surahs (ratio: 5)
-  2. Memorizing surahs (ratio: 3)
+  complete; the timer keeps running on tab/focus loss — only navigating away
+  from the reader ends it, with a brief mirrored intro/summary message):
+  1. Memorizing surahs (ratio: 5) — leads, since this is what's being worked on
+  2. Memorized surahs (ratio: 3)
   3. Longer surahs for breadth (ratio: 2)
   - Average full session: ~10 minutes (user adjusts ratios in settings in
     5-min increments).
   - After completing a step, app nudges user to begin the next step. User
     can confirm (navigate to a surah from that category) or ignore (stay in
     current category or end session).
+  - **Sessions are Study-only:** the steps/timer/nudges above begin only via
+    a deliberate "Enter as Study" — from Home's Study card, or the bottom-nav
+    Reader tab. Mushaf and Browse→open are free reads with no session chrome.
   - **Mode selection:** before entering a surah, user chooses **Study** or
     **Mushaf** mode (visual differentiator: Study shows an "S" badge,
     Mushaf shows an "M" badge). Both display the exact Madani mushaf-page
@@ -62,7 +66,8 @@ soft twinkling accents. All status is shown through green shades and fog.
   automatic Engine B demotion.
 - **Mushaf mode:** taps trigger automatic Engine B demotion; clean reads are
   silent with no promotion (Engine A dormant).
-- At session end, user can confirm "done for now" to return to Garden.
+- A session ends by navigating away from the reader (back to a hub); a brief
+  mirrored message marks the start and end of a Study session.
 
 ### Status color scale (0–4)
 

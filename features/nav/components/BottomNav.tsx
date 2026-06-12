@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, List, BookOpen, BarChart3, Settings } from "lucide-react";
-import { readLastPage } from "@/features/reader/lib/lastPage";
+import { getRecommendedPage } from "@/features/reader/lib/recommendedPage";
 
 type NavKey = "home" | "browse" | "reader" | "metrics" | "settings";
 
@@ -26,15 +26,16 @@ function activeKey(pathname: string): NavKey {
 }
 
 // Bottom nav — the spine of the hub screens (Home, Browse, Metrics,
-// Settings). The Reader runs immersive and isn't part of this nav; its
-// "current/last page" target is read from localStorage on mount.
+// Settings). The Reader runs immersive and isn't part of this nav; tapping it
+// opens the page Home recommends as a Study session (?mode=study), read from
+// settings on mount.
 export function BottomNav() {
   const pathname = usePathname();
   const active = activeKey(pathname);
-  const [readerHref, setReaderHref] = useState("/reader/1");
+  const [readerHref, setReaderHref] = useState("/reader/1?mode=study");
 
   useEffect(() => {
-    setReaderHref(`/reader/${readLastPage()}`);
+    setReaderHref(`/reader/${getRecommendedPage()}?mode=study`);
   }, []);
 
   return (

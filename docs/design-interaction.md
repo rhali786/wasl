@@ -82,20 +82,21 @@ mode. In Mushaf mode:
 number, promote/demote controls, dictionary source selector, share/
 bookmark, "click for more."
 
-**Layout — the ribbon.** A slim strip that drops in **just below the header**
-(under the surah/page line and the S/M badge), holding the tapped word + its
-meaning. It **overlays** the page — the 15 lines beneath never shift or resize.
-The tapped word is lightly highlighted above. Dismiss by tapping the page, or
-the strip's clear control. (This supersedes the old bottom-pinned bar, which
-read as a modal; chosen over docked-card / floating-caret / slide-sheet
-variants because it never covers the line being read and never moves the page.)
+**Layout — a floating meaning card.** A small low-opacity card appears
+directly **above or below the tapped word** (whichever keeps it on-screen —
+words in the page's lower half open the card above, others below), holding
+just the word's meaning. It **overlays** the page — the 15 lines beneath never
+shift or resize. The tapped word is outlined. Tap anywhere on the page to
+dismiss. (This supersedes the earlier below-header ribbon; placing the card at
+the point of attention follows the eye down the page and reads as less
+obtrusive than a fixed strip.)
 
 ## Full flow (review mode)
 
 ```
 User reads a page (Study mode)
         │
-        │   tap a word →  ribbon shows meaning · Engine B demotes it one level (live)
+        │   tap a word →  meaning card shows nearby · Engine B demotes it one level (live)
         │   (untapped words just stay as they are during the read)
         ▼
    User finishes the page  ── the clean read ──────────────────┐
@@ -122,5 +123,11 @@ Engine B is off and Engine A is dormant. No status moves.
 
 ## Session window
 
-A session = any continuous foreground period. App goes to background → new
-session on return.
+A session = time spent in the reader, and begins only on a deliberate "Enter
+as Study" — from Home's Study card, or the bottom-nav Reader tab. Mushaf and
+Browse→open are free reads — Engines A/B still apply (status tracking is keyed
+on Study mode, not on a session), but there is no timer, plan, or nudges. A
+session ends when the user
+navigates away from the reader (back to a hub) — **tab/focus loss does not end
+it**, so the timer keeps running in the background. A brief, self-dismissing
+message bookends the session: one on start, one (mirrored) on end.
