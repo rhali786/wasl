@@ -114,6 +114,48 @@ describe("SessionProvider", () => {
     }
   });
 
+  it("dismisses the intro when tapped", () => {
+    jest.useFakeTimers();
+    try {
+      renderProvider();
+      act(() => {
+        jest.advanceTimersByTime(0);
+      });
+      expect(screen.getByTestId("session-intro")).toBeInTheDocument();
+      act(() => {
+        screen.getByTestId("session-intro").click();
+      });
+      expect(screen.queryByTestId("session-intro")).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("dismisses the summary when tapped", () => {
+    jest.useFakeTimers();
+    try {
+      const { rerender } = renderProvider();
+      act(() => {
+        jest.advanceTimersByTime(INTRO_MS);
+      });
+
+      mockPath = "/browse";
+      rerender(
+        <SessionProvider>
+          <Probe />
+        </SessionProvider>
+      );
+
+      expect(screen.getByTestId("session-summary")).toBeInTheDocument();
+      act(() => {
+        screen.getByTestId("session-summary").click();
+      });
+      expect(screen.queryByTestId("session-summary")).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("does not show an intro for a free read (no ?mode=study)", () => {
     mockMode = null;
     renderProvider();

@@ -29,15 +29,15 @@ const INTRO_MESSAGE =
 const SUMMARY_MESSAGE =
   "Your session has ended. May Allah accept it, and make it heavy on your scales.";
 
-// Intro/summary overlays: fade in → hold (readable) → fade out.
-export const INTRO_FADE_IN_MS = 700;
-export const INTRO_HOLD_MS = 4500;
-export const INTRO_FADE_OUT_MS = 1800;
+// Intro/summary overlays: fade in → hold (readable) → fade out. Tap anywhere to dismiss.
+export const INTRO_FADE_IN_MS = 500;
+export const INTRO_HOLD_MS = 1800;
+export const INTRO_FADE_OUT_MS = 700;
 export const INTRO_MS = INTRO_FADE_IN_MS + INTRO_HOLD_MS + INTRO_FADE_OUT_MS;
 
-export const SUMMARY_FADE_IN_MS = 700;
-export const SUMMARY_HOLD_MS = 4500;
-export const SUMMARY_FADE_OUT_MS = 2000;
+export const SUMMARY_FADE_IN_MS = 500;
+export const SUMMARY_HOLD_MS = 1800;
+export const SUMMARY_FADE_OUT_MS = 700;
 export const SUMMARY_MS = SUMMARY_FADE_IN_MS + SUMMARY_HOLD_MS + SUMMARY_FADE_OUT_MS;
 
 export type SessionNudge =
@@ -209,6 +209,8 @@ function SessionProviderInner({ children }: { children: React.ReactNode }) {
     setNudge(null);
   }, []);
 
+  const dismissPhase = useCallback(() => setPhase(null), []);
+
   const overlayTiming = phase ? phaseTiming(phase) : null;
 
   return (
@@ -226,8 +228,15 @@ function SessionProviderInner({ children }: { children: React.ReactNode }) {
       {children}
       {phase && overlayTiming ? (
         <div
+          role="button"
+          tabIndex={-1}
+          aria-label="Dismiss"
           data-testid={phase === "intro" ? "session-intro" : "session-summary"}
-          className={`pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background/90 px-10 text-center backdrop-blur-sm transition-opacity ease-in-out ${
+          onClick={dismissPhase}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") dismissPhase();
+          }}
+          className={`fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-background/90 px-10 text-center backdrop-blur-sm transition-opacity ease-in-out ${
             phaseLeaving || !phaseVisible ? "opacity-0" : "opacity-100"
           }`}
           style={{
