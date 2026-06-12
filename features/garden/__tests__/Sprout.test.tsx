@@ -31,7 +31,7 @@ describe("Sprout", () => {
     render(<Sprout />);
     expect(capturedAnimate).toEqual({
       rotate: [-SPROUT_SWAY_ROTATE_DEG, SPROUT_SWAY_ROTATE_DEG, -SPROUT_SWAY_ROTATE_DEG],
-      scale: [0.96, 1.04, 0.96],
+      scale: [0.92, 1.08, 0.92],
     });
     expect(SPROUT_SWAY_ROTATE_DEG).toBeGreaterThanOrEqual(5);
     expect(SPROUT_SWAY_DURATION_S).toBeLessThanOrEqual(7);

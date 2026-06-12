@@ -6,10 +6,10 @@ import { motion, useReducedMotion } from "motion/react";
 // Placeholder growth illustration — the cute sapling that stands in for the
 // painterly tree until that art lands. Mood-neutral by design (the background
 // shifts with time of day; the plant does not). Used faint, as backdrop.
-export const SPROUT_SWAY_ROTATE_DEG = 6;
-export const SPROUT_SWAY_SCALE_MIN = 0.96;
-export const SPROUT_SWAY_SCALE_MAX = 1.04;
-export const SPROUT_SWAY_DURATION_S = 6.2;
+export const SPROUT_SWAY_ROTATE_DEG = 11;
+export const SPROUT_SWAY_SCALE_MIN = 0.92;
+export const SPROUT_SWAY_SCALE_MAX = 1.08;
+export const SPROUT_SWAY_DURATION_S = 4.6;
 
 export function Sprout({
   size = 72,
