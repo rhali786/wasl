@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Hand, X } from "lucide-react";
 import { FitLine } from "./FitLine";
 import { Ticks } from "./Ticks";
 import { UnknownHaze } from "./UnknownHaze";
+import { AyahMarker } from "./AyahMarker";
 import { stripTashkil } from "../lib/displayText";
 import { readReaderMode, writeReaderMode } from "../lib/readerMode";
 import { markReaderCoachSeen, readReaderCoachSeen } from "../lib/coachHint";
@@ -454,14 +455,7 @@ export function Reader({
                 {line.words.map((word, wi) => {
                   const key = `${page.page}:${line.line}:${wi}`;
                   if (word.type === "end") {
-                    return (
-                      <span
-                        key={key}
-                        className="mx-0.5 grid size-[1.35em] shrink-0 place-items-center rounded-full text-[0.6em] font-semibold text-ayah-marker-text ring-1 ring-ayah-marker-ring"
-                      >
-                        {word.ayah}
-                      </span>
-                    );
+                    return <AyahMarker key={key} ayah={word.ayah} />;
                   }
                   const level = statuses[word.id]?.level ?? 0;
                   const isSelected = selected?.key === key;
@@ -489,7 +483,11 @@ export function Reader({
                         <span
                           data-testid="word-meaning"
                           dir="ltr"
-                          className={`pointer-events-none absolute left-1/2 z-30 w-max max-w-[12em] -translate-x-1/2 whitespace-normal rounded-lg bg-card/90 px-2.5 py-1 text-center font-display text-xs italic text-muted-foreground shadow-sm ring-1 ring-border/70 ${
+                          // Inverts against the time-of-day mood so it always
+                          // separates from the page: dark bubble on the light
+                          // daytime moods, warm-light bubble at night (.dark).
+                          // A faint gold hairline carries the signature thread.
+                          className={`pointer-events-none absolute left-1/2 z-30 w-max max-w-[14em] -translate-x-1/2 whitespace-normal rounded-xl bg-forest px-3 py-1.5 text-center font-display text-base font-semibold italic leading-snug text-mist shadow-lg ring-1 ring-gold/25 dark:bg-sand-100 dark:text-forest dark:ring-gold/30 ${
                             line.line > page.lines.length / 2
                               ? "bottom-full mb-1.5"
                               : "top-full mt-1.5"
